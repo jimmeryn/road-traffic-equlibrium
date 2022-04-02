@@ -19,23 +19,15 @@ disable=
     C0116, # missing-module-docstring
 
 [BASIC]
-argument-naming-style=snake_case
-attr-naming-style=snake_case
+docstring-min-length=-1
+include-naming-hint=yes
+argument-naming-style=any
+attr-naming-style=any
 class-naming-style=PascalCase
 const-naming-style=UPPER_CASE
-docstring-min-length=-1
 function-naming-style=snake_case
-
-# Include a hint for the correct naming format with invalid-name.
-include-naming-hint=yes
-
-# Naming style matching correct method names.
-method-naming-style=snake_case
-
-# Naming style matching correct module names.
+method-naming-style=PascalCase
 module-naming-style=snake_case
-
-# Naming style matching correct variable names.
 variable-naming-style=snake_case
 
 [FORMAT]
@@ -51,10 +43,10 @@ indent-after-paren=4
 indent-string='    '
 
 # Maximum number of characters on a single line.
-max-line-length=80
+max-line-length=120
 
 # Maximum number of lines in a module.
-max-module-lines=100
+max-module-lines=1000
 
 # Allow the body of a class to be on the same line as the declaration if body
 # contains single statement.
