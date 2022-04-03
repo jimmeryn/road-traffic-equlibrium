@@ -7,6 +7,7 @@ from src.shared.link import Link
 # TODO notes/questions:
 # - What is expansion factor - lambda and how to use it
 # - What is alpha_max/min -> sometimes it's links sometimes we assign number to it
+# - RelabelNodes(k, j) function??
 
 
 class AlgorytmB:
@@ -105,6 +106,7 @@ class AlgorytmB:
                     self.EqualizeCost(k, j, *params)
                     # TODO create RelabelNodes function
                     # RelabelNodes(k, j)
+                    self.x[j], self.x[k] = self.x[k], self.x[j]
                     k_hat = k
         return k_hat
 

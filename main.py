@@ -21,6 +21,7 @@ def main():
         0], f"expected Equilibrium to be {solution[0]}, got: {calculated[0]}"
     assert calculated[1] == solution[
         1], f"expected delta_c_max to be {solution[1]}, got: {calculated[1]}"
+    print(calculated)
 
 
 if __name__ == "__main__":
