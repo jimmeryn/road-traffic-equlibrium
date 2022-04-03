@@ -4,6 +4,10 @@ from typing import List, Set, Tuple
 
 from src.shared.link import Link
 
+# TODO notes/questions:
+# - What is expansion factor - lambda and how to use it
+# - What is alpha_max/min -> sometimes it's links sometimes we assign number to it
+
 
 class AlgorytmB:
     """
@@ -11,49 +15,51 @@ class AlgorytmB:
 
     ...
 
-    Attributes
+    Attributes:
     ----------
-    A: set[Link]
-        set of arcs in acyclic network
-    n: int
-        highest node number (topologically ordered nodes)
-    c: list[float]
-        arcs-length cost array
-    c_der: list[float]
-        arcs-length derivatives array
-    m_hat: int
-        upper bound on number of arcs on a path—a scalar
-    e: float
-        upper bound on max-min path cost differential—a scalar
-    x: list[int]
-        initial arc-flow vector
-    pi_max: list[float]
-    pi_min: list[float]
-    alpha_max: list[Link]
-    alpha_min: list[Link]
+    A : set[Link]
+        Set of arcs in acyclic network
+    n : int
+        Highest node number (topologically ordered nodes)
+    c : list[float]
+        Arcs-length cost array
+    c_der : list[float]
+        Arcs-length derivatives array
+    m : int
+        Upper bound on number of arcs on a path—a scalar
+    e : float
+        Upper bound on max-min path cost differential—a scalar
+    x : list[int]
+        Initial arc-flow vector
+    pi_max : list[float]
+        Max path potential
+    pi_min : list[float]
+        Min path potential
+    alpha_max : list[Link]
+        Max pedecessor labels
+    alpha_min : list[Link]
+        Min pedecessor labels
 
-    Methods
+    Methods:
     -------
-    CalculateEquilibrium()
-        Calculates Equilibrium using B Algorithm - the main procedure,
-        swap flow between paths between paths,
-        until the max difference between max and min path cost drops to a given level e
-    UpdateTrees()
-        UpdateTrees
+    CalculateEquilibrium(A, n, x, c, c_der, m: int, e: float):
+        Calculates Equilibrium using B Algorithm - the main procedure, swap flow between paths between paths, until the max difference between max and min path cost drops to a given level e.
     ShiftFlow()
-        ShiftFlow
-    GetBranchNode()?
-        GetBranchNode
-    EqualizePathCost()
-        EqualizePathCost
-    GetDeltaXandC()
-        GetDeltaXandC
-    UpdatePathFlow()
-        UpdatePathFlow
-    ArcCost()
-        ArcCost - this method may differ depending on the model
-    ArcDerivative()
-        ArcDerivative - this method may differ depending on the model
+        Discovering arc-independent max and min paths to each node and transfers flow between paths to equalize their costs.
+    GetBranchNode(j: int)
+        Calculate start node k being the only node p_max and p_min have in common (except their shared end node j).
+    UpdateTrees(k: int, n: int) -> float
+        Updates max and min path potentials (pi_max, pi_min) and pedecessor labels (alpha_max, alpha_min).
+    EqualizePathCost(k: int, j: int, x_min, x_max, c_min, c_max, c_der_min, c_der_max, exp_factor)
+        Move certain amout of flow (delta_x) from p_max to p_min to equilize costs c_max and c_min (Newton's method).
+    GetDeltaXandC(x_min, x_max, c_min, c_max, c_der_min, c_der_max)
+        Calculate increment flow (delta_x) and current max and min paths (x_min, x_max) cost difference (delta_c).
+    UpdatePathFlow(delta_x: int, k: int, j: int, alpha)
+        Update all arcs on a given path by changing their flow (update by delta_x) and update costs (k - start node, j - end node).
+    ArcCost(arc: Link, flow: int) -> float
+        Calculate arc cost at given flow (this method may differ depending on the model)
+    ArcDerivative(arc: Link, flow: int) -> float
+        Calculate arc derivative at given flow (this method may differ depending on the model)
     """
 
     def __init__(
@@ -62,7 +68,7 @@ class AlgorytmB:
         n: int,
         c: List[List[float]],
         c_der: List[List[float]],
-        m_hat: int,
+        m: int,
         e: float,
         x: List[List[int]],
         pi_max: List[float],
@@ -74,7 +80,7 @@ class AlgorytmB:
         self.n = n
         self.c = c
         self.c_der = c_der
-        self.m_hat = m_hat
+        self.m = m
         self.e = e
 
         self.x = x
@@ -92,7 +98,7 @@ class AlgorytmB:
         return (self.x, delta_c_max)
 
     def ShiftFlow(self):
-        for j in range(self.n, 2, -1):
+        for j in range(self.n - 1, 1, -1):
             if self.alpha_max[j] and self.pi_min[j] < self.pi_max[j]:
                 [k, *params] = self.GetBranchNode(j)
                 if 0 < k:
@@ -130,9 +136,8 @@ class AlgorytmB:
                 c_der_min += self.c_der[ij_min.src][ij_min.dest]
                 m_min += 1
 
-        # Might be error here () do not math in source
-        exp_factor = 1 + math.floor(self.m_hat - max(m_min, m_max) / 2)
-        condition = exp_factor(c_max - c_min) < self.e
+        exp_factor = 1 + math.floor(self.m - max(m_min, m_max) / 2)
+        condition = c_max - c_min < self.e
         k = 0 if condition else ij_max.src
 
         return [k, x_min, x_max, c_min, c_max, c_der_min, c_der_max, exp_factor]
@@ -140,17 +145,17 @@ class AlgorytmB:
     def UpdateTrees(self, k: int, n: int) -> float:
         delta_c_max = 0.0
         self.pi_max[0] = 0.0
-        self.alpha_max[0] = -1.0
+        self.alpha_max[0] = -1
         for j in range(k + 1, n - 1):
             self.pi_min[j] = math.inf
             self.pi_max[j] = -math.inf
             self.alpha_min[j] = 0
             self.alpha_max[j] = 0
-            for link in self.A:  # for each arc key == i?
-                i = link.src  # ij/arc.get("init_node")
-                j = link.dest  # ij/arc.get("term_node")
-                cij = self.c[i][j]  # self.c.get(i).get(j)
-                xij = self.x[i][j]  # self.x.get(i).get(j)
+            for link in self.A:
+                i = link.src
+                j = link.dest
+                cij = self.c[i][j]
+                xij = self.x[i][j]
                 if self.pi_min[i] + cij < self.pi_min[j]:
                     self.pi_min[j] = self.pi_min[i] + cij
                     self.alpha_min[j] = link
@@ -163,11 +168,14 @@ class AlgorytmB:
                     self.alpha_max[j] = link
             if self.alpha_max[j] != 0:
                 delta_pi = math.inf
-                for key in self.pi_max.keys():
-                    c = self.pi_max.get(key) - self.pi_min.get(key)
-                    delta_pi = c if c < delta_pi else delta_pi
+                for index, pi_max_index in enumerate(self.pi_max):
+                    cost = pi_max_index - self.pi_min[index]
+                    delta_pi = cost if cost < delta_pi else delta_pi
 
-                delta_c_max = max(delta_pi, delta_c_max)
+                delta_c_max = max(
+                    sum(self.pi_max[k:n]) - sum(self.pi_min[k:n]),
+                    delta_c_max
+                )
         return delta_c_max
 
     def EqualizeCost(

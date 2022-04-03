@@ -19,29 +19,28 @@ def get_data():
         [0, 0, 0, 0]
     ]
 
-    A = {
-        Link(0, 1, 1),
-        Link(0, 3, 3),
-        Link(1, 2, 0),
-        Link(1, 3, 1),
-        Link(2, 3, 0),
-    }
+    l12 = Link(0, 1, 1)
+    l14 = Link(0, 3, 3)
+    l23 = Link(1, 2, 0)
+    l24 = Link(1, 3, 1)
+    l34 = Link(2, 3, 0)
+    A = {l12, l14, l23, l24, l34}
 
-    n = len(nodes)
+    n = 3
 
     # arc cost
     c = [
-        [0, 114, 0, 172],
-        [0, 0, 26, 31],
-        [0, 0, 0, 26],
-        [0, 0, 0, 0]
+        [0.0, 114.0, 0.0, 172.0],
+        [0.0, 0.0, 26.0, 31.0],
+        [0.0, 0.0, 0.0, 26.0],
+        [0.0, 0.0, 0.0, 0.0]
     ]
 
     c_der = [
-        [0, 114, 0, 172],
-        [0, 0, 26, 31],
-        [0, 0, 0, 26],
-        [0, 0, 0, 0]
+        [0.0, 114.0, 0.0, 172.0],
+        [0.0, 0.0, 26.0, 31.0],
+        [0.0, 0.0, 0.0, 26.0],
+        [0.0, 0.0, 0.0, 0.0]
     ]
     m_hat = 3
 
@@ -50,36 +49,36 @@ def get_data():
     x = flow
 
     # min path array
-    pi_min = {
-        0: 0,
-        1: 114,
-        2: 140,
-        3: 176,
-    }
+    pi_min = [
+        0,
+        114,
+        140,
+        176,
+    ]
 
     # max path array
-    pi_max = {
-        0: 0,
-        1: 114,
-        2: 140,
-        3: 166,
-    }
+    pi_max = [
+        0,
+        114,
+        140,
+        166,
+    ]
 
     # min predecessor arc array (set of Links) TODO: fix
-    alpha_min: dict[int, Link] = {
-        0: 0,
-        1: 114,
-        2: 140,
-        3: 176,
-    }
+    alpha_min: dict[int, Link] = [
+        -1,
+        l12,
+        l23,
+        l34,
+    ]
 
     # max predecessor arc array (set of Links) TODO: fix
-    alpha_max: dict[int, Link] = {
-        0: 0,
-        1: 114,
-        2: 140,
-        3: 176,
-    }
+    alpha_max: dict[int, Link] = [
+        -1,
+        l12,
+        l23,
+        l24,
+    ]
 
     return [
         A,
