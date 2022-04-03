@@ -22,6 +22,11 @@ Running env:
 .\.venv\Scripts\activate
 ```
 
+Running MyPy;
+```
+mypy main.py
+```
+
 ## How to read data files:
 
 Data files can be found at `src/data/<city-name>`.

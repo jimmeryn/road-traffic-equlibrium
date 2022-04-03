@@ -2,6 +2,8 @@
 Four nodes - data for testing purpouses
 Graph with 4 nodes and 5 edges
 """
+from typing import List, Tuple
+
 from src.shared.link import Link
 
 
@@ -94,8 +96,8 @@ def get_data():
     ]
 
 
-def get_solution():
+def get_solution() -> Tuple[List[List[int]], float]:
     equilibrium = [[0, 57, 0, 42], [0, 0, 28, 28], [0, 0, 0, 28], [0, 0, 0, 0]]
     delta_c_max = 0.25
 
-    return [equilibrium, delta_c_max]
+    return (equilibrium, delta_c_max)

@@ -1,36 +1,43 @@
 """Algorithm B Class"""
 import math
+from typing import List, Set, Tuple
 
 from src.shared.link import Link
 
 
 class AlgorytmB:
     """
-    A class used to represent B Algorthm
+    Class used to represent B Algorthm
 
     ...
 
     Attributes
     ----------
-    A: dict[int, Link]
+    A: set[Link]
         set of arcs in acyclic network
     n: int
         highest node number (topologically ordered nodes)
-    c: list
+    c: list[float]
         arcs-length cost array
-    c0: list
+    c_der: list[float]
         arcs-length derivatives array
-    x: tuple
-        initial arc-flow vector
-    m: float
+    m_hat: int
         upper bound on number of arcs on a path—a scalar
     e: float
         upper bound on max-min path cost differential—a scalar
+    x: list[int]
+        initial arc-flow vector
+    pi_max: list[float]
+    pi_min: list[float]
+    alpha_max: list[Link]
+    alpha_min: list[Link]
 
     Methods
     -------
     CalculateEquilibrium()
-        Calculates Equilibrium using B Algorithm - the main procedure
+        Calculates Equilibrium using B Algorithm - the main procedure,
+        swap flow between paths between paths,
+        until the max difference between max and min path cost drops to a given level e
     UpdateTrees()
         UpdateTrees
     ShiftFlow()
@@ -44,24 +51,24 @@ class AlgorytmB:
     UpdatePathFlow()
         UpdatePathFlow
     ArcCost()
-        ArcCost
+        ArcCost - this method may differ depending on the model
     ArcDerivative()
-        ArcDerivative
+        ArcDerivative - this method may differ depending on the model
     """
 
     def __init__(
         self,
-        A: dict[int, Link],
+        A: Set[Link],
         n: int,
-        c: list,
-        c_der: list,
-        m_hat: float,
+        c: List[List[float]],
+        c_der: List[List[float]],
+        m_hat: int,
         e: float,
-        x,
-        pi_max,
-        pi_min,
-        alpha_max,
-        alpha_min
+        x: List[List[int]],
+        pi_max: List[float],
+        pi_min: List[float],
+        alpha_max: List[Link],
+        alpha_min: List[Link]
     ):
         self.A = A
         self.n = n
@@ -76,13 +83,13 @@ class AlgorytmB:
         self.alpha_max = alpha_max
         self.alpha_min = alpha_min
 
-    def CalculateEquilibrium(self) -> tuple[int, int]:
+    def CalculateEquilibrium(self) -> Tuple[List[List[int]], float]:
         delta_c_max = self.UpdateTrees(1, self.n + 1)
         while self.e < delta_c_max:
             k_hat = self.ShiftFlow()
             delta_c_max = self.UpdateTrees(k_hat, self.n + 1)
 
-        return [self.x, delta_c_max]
+        return (self.x, delta_c_max)
 
     def ShiftFlow(self):
         for j in range(self.n, 2, -1):
@@ -130,10 +137,10 @@ class AlgorytmB:
 
         return [k, x_min, x_max, c_min, c_max, c_der_min, c_der_max, exp_factor]
 
-    def UpdateTrees(self, k, n) -> float:
-        delta_c_max = 0
-        self.pi_max[0] = 0
-        self.alpha_max[0] = -1
+    def UpdateTrees(self, k: int, n: int) -> float:
+        delta_c_max = 0.0
+        self.pi_max[0] = 0.0
+        self.alpha_max[0] = -1.0
         for j in range(k + 1, n - 1):
             self.pi_min[j] = math.inf
             self.pi_max[j] = -math.inf
@@ -167,8 +174,8 @@ class AlgorytmB:
         self,
         k: int,
         j: int,
-        x_min: float,
-        x_max: float,
+        x_min: int,
+        x_max: int,
         c_min: float,
         c_max: float,
         c_der_min: float,
@@ -196,28 +203,28 @@ class AlgorytmB:
 
     def GetDeltaXandC(
         self,
-        x_min: float,
-        x_max: float,
+        x_min: int,
+        x_max: int,
         c_min: float,
         c_max: float,
         c_der_min: float,
         c_der_max: float
-    ) -> tuple[float, float]:
+    ) -> Tuple[int, float]:
         delta_x_max = x_max if c_min < c_max else x_min
         if delta_x_max <= 0:
-            return [0, 0]
+            return (0, 0.0)
         if c_der_max + c_der_min <= 0:
             delta_x = x_max if c_min <= c_max else -x_min
         else:
             cost = (c_max - c_min) / (c_der_max + c_der_min)
             delta_x = min(delta_x_max, cost)
 
-        return [delta_x, abs(c_max - c_min)]
+        return (delta_x, abs(c_max - c_min))
 
-    def UpdatePathFlow(self, delta_x: float, k: int, j: int, alpha: list[Link]):
+    def UpdatePathFlow(self, delta_x: int, k: int, j: int, alpha: list[Link]) -> Tuple[int, float, float]:
         x_p = math.inf
-        c_p = 0
-        c_der_p = 0
+        c_p = 0.0
+        c_der_p = 0.0
         i = j
         while i != k:
             arc_ij = alpha[i]

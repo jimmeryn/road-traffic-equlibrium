@@ -19,10 +19,10 @@
 
 class Link:
     # Link class for testing purpouses
-    def __init__(self, src, dest, multip):
+    def __init__(self, src: int, dest: int, multip: float):
         self.src = src
         self.dest = dest
         self.multip = multip
 
-    def cost(self, flow):
+    def cost(self, flow: int):
         return flow * self.multip
