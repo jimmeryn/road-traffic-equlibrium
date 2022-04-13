@@ -89,17 +89,18 @@ class AlgorytmB:
         self.pi_min = pi_min
         self.alpha_max = alpha_max
         self.alpha_min = alpha_min
+        self.k_hat = 0
 
     def CalculateEquilibrium(self) -> Tuple[List[List[int]], float]:
         delta_c_max = self.UpdateTrees(1, self.n + 1)
         while self.e < delta_c_max:
-            k_hat = self.ShiftFlow()
-            delta_c_max = self.UpdateTrees(k_hat, self.n + 1)
+            self.ShiftFlow()
+            delta_c_max = self.UpdateTrees(self.k_hat, self.n + 1)
 
         return (self.x, delta_c_max)
 
     def ShiftFlow(self):
-        for j in range(self.n - 1, 1, -1):
+        for j in range(self.n, 1, -1):
             if self.alpha_max[j] and self.pi_min[j] < self.pi_max[j]:
                 [k, *params] = self.GetBranchNode(j)
                 if 0 < k:
@@ -107,8 +108,7 @@ class AlgorytmB:
                     # TODO create RelabelNodes function
                     # RelabelNodes(k, j)
                     self.x[j], self.x[k] = self.x[k], self.x[j]
-                    k_hat = k
-        return k_hat
+                    self.k_hat = k
 
     def GetBranchNode(self, j: int):
         ij_min = self.alpha_min[j]
@@ -139,7 +139,7 @@ class AlgorytmB:
                 m_min += 1
 
         exp_factor = 1 + math.floor(self.m - max(m_min, m_max) / 2)
-        condition = c_max - c_min < self.e
+        condition = exp_factor * (c_max - c_min) < self.e
         k = 0 if condition else ij_max.src
 
         return [k, x_min, x_max, c_min, c_max, c_der_min, c_der_max, exp_factor]
@@ -169,13 +169,9 @@ class AlgorytmB:
                     self.pi_max[j] = self.pi_max[i] + cij
                     self.alpha_max[j] = link
             if self.alpha_max[j] != 0:
-                delta_pi = math.inf
-                for index, pi_max_index in enumerate(self.pi_max):
-                    cost = pi_max_index - self.pi_min[index]
-                    delta_pi = cost if cost < delta_pi else delta_pi
-
                 delta_c_max = max(
-                    sum(self.pi_max[k:n]) - sum(self.pi_min[k:n]),
+                    *[a - b for (a, b) in zip(self.pi_max[k:n],
+                                              self.pi_min[k:n])],
                     delta_c_max
                 )
         return delta_c_max
@@ -236,17 +232,18 @@ class AlgorytmB:
         c_p = 0.0
         c_der_p = 0.0
         i = j
-        while i != k:
-            arc_ij = alpha[i]
-            self.x[i][j] = self.x[i][j] + delta_x  # x.getPath(i, j) / set
-            x_ij = self.x[i][j]
+        while i != k:  # i is not changing...
+            ij = alpha[i]
+            self.x[ij.src][ij.dest] += delta_x
+            x_ij = self.x[ij.src][ij.dest]
             x_p = min(x_p, x_ij)
 
-            self.c[i][j] = self.ArcCost(arc_ij, x_ij)
-            self.c_der[i][j] = self.ArcDerivative(arc_ij, x_ij)
+            self.c[ij.src][ij.dest] = self.ArcCost(ij, x_ij)
+            self.c_der[ij.src][ij.dest] = self.ArcDerivative(ij, x_ij)
 
-            c_p = c_p + self.c[i][j]
-            c_der_p = c_der_p + self.c_der[i][j]
+            c_p += self.c[ij.src][ij.dest]
+            c_der_p += self.c_der[ij.src][ij.dest]
+            i -= 1
 
         return (x_p, c_p, c_der_p)
 
