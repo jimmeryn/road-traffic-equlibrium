@@ -19,11 +19,11 @@ def get_data():
         [0, 0, 0, 0]
     ]
 
-    l12 = Link(0, 1, 1)
-    l14 = Link(0, 3, 3)
-    l23 = Link(1, 2, 0)
-    l24 = Link(1, 3, 1)
-    l34 = Link(2, 3, 0)
+    l12 = Link(0, 1, 2)
+    l14 = Link(0, 3, 4)
+    l23 = Link(1, 2, 1)
+    l24 = Link(1, 3, 2)
+    l34 = Link(2, 3, 1)
     A = {l12, l14, l23, l24, l34}
 
     n = 3
@@ -31,14 +31,14 @@ def get_data():
     # arc cost
     c = [
         [0.0, 114.0, 0.0, 172.0],
-        [0.0, 0.0, 26.0, 31.0],
+        [0.0, 0.0, 26.0, 62.0],
         [0.0, 0.0, 0.0, 26.0],
         [0.0, 0.0, 0.0, 0.0]
     ]
 
     c_der = [
         [0.0, 114.0, 0.0, 172.0],
-        [0.0, 0.0, 26.0, 31.0],
+        [0.0, 0.0, 26.0, 62.0],
         [0.0, 0.0, 0.0, 26.0],
         [0.0, 0.0, 0.0, 0.0]
     ]
@@ -65,16 +65,16 @@ def get_data():
     ]
 
     # min predecessor arc array (set of Links) TODO: fix
-    alpha_min: dict[int, Link] = [
-        -1,
+    alpha_min: dict[int, Link | None] = [
+        None,
         l12,
         l23,
         l34,
     ]
 
     # max predecessor arc array (set of Links) TODO: fix
-    alpha_max: dict[int, Link] = [
-        -1,
+    alpha_max: dict[int, Link | None] = [
+        None,
         l12,
         l23,
         l24,

@@ -13,7 +13,7 @@ def main():
     # current_city = DATA_LIST[0]
     # [demands, nodes, network] = data.import_data_for_city(current_city)
     # nodes_count = nodes.count()['node']
-    [*params] = test_data.get_data()
+    params = test_data.get_data()
     calculated = AlgorytmB(*params).CalculateEquilibrium()
     solution = test_data.get_solution()
 
