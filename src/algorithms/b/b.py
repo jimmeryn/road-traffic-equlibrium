@@ -113,7 +113,7 @@ class AlgorytmB:
                     self.EqualizeCost(k, j, *params)
                     # TODO create RelabelNodes function
                     # RelabelNodes(k, j)
-                    self.x[j], self.x[k] = self.x[k], self.x[j]
+                    # self.x[j], self.x[k] = self.x[k], self.x[j]
                     self.k_hat = k
 
     def GetBranchNode(self, j: int):
@@ -234,7 +234,7 @@ class AlgorytmB:
         c_p = 0.0
         c_der_p = 0.0
         i = j
-        while i != k:  # i is not changing...
+        while i != k:
             ij = alpha[i]
             self.x[ij.src][ij.dest] += delta_x
             x_ij = self.x[ij.src][ij.dest]
@@ -245,7 +245,7 @@ class AlgorytmB:
 
             c_p += self.c[ij.src][ij.dest]
             c_der_p += self.c_der[ij.src][ij.dest]
-            i -= 1
+            i = ij.src
 
         return (x_p, c_p, c_der_p)
 
