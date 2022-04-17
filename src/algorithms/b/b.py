@@ -44,11 +44,15 @@ class AlgorytmB:
     Methods:
     -------
     CalculateEquilibrium(A, n, x, c, c_der, m: int, e: float):
-        Calculates Equilibrium using B Algorithm - the main procedure, swap flow between paths between paths, until the max difference between max and min path cost drops to a given level e.
+        Calculates Equilibrium using B Algorithm - the main procedure,
+        swap flow between paths between paths,
+        until the max difference between max and min path cost drops to a given level e.
     ShiftFlow()
-        Discovering arc-independent max and min paths to each node and transfers flow between paths to equalize their costs.
+        Discovering arc-independent max and min paths to each node and transfers flow
+        between paths to equalize their costs.
     GetBranchNode(j: int)
-        Calculate start node k being the only node p_max and p_min have in common (except their shared end node j).
+        Calculate start node k being the only node p_max and p_min have in common
+        (except their shared end node j).
     UpdateTrees(k: int, n: int) -> float
         Updates max and min path potentials (pi_max, pi_min) and pedecessor labels (alpha_max, alpha_min).
     EqualizePathCost(k: int, j: int, x_min, x_max, c_min, c_max, c_der_min, c_der_max, exp_factor)
@@ -56,7 +60,8 @@ class AlgorytmB:
     GetDeltaXandC(x_min, x_max, c_min, c_max, c_der_min, c_der_max)
         Calculate increment flow (delta_x) and current max and min paths (x_min, x_max) cost difference (delta_c).
     UpdatePathFlow(delta_x: int, k: int, j: int, alpha)
-        Update all arcs on a given path by changing their flow (update by delta_x) and update costs (k - start node, j - end node).
+        Update all arcs on a given path by changing their flow (update by delta_x)
+        and update costs (k - start node, j - end node).
     ArcCost(arc: Link, flow: int) -> float
         Calculate arc cost at given flow (this method may differ depending on the model)
     ArcDerivative(arc: Link, flow: int) -> float
@@ -92,10 +97,11 @@ class AlgorytmB:
         self.k_hat = 0
 
     def CalculateEquilibrium(self) -> Tuple[List[List[int]], float]:
-        delta_c_max = self.UpdateTrees(1, self.n + 1)
+        delta_c_max = self.UpdateTrees(0, self.n)
         while self.e < delta_c_max:
             self.ShiftFlow()
-            delta_c_max = self.UpdateTrees(self.k_hat, self.n + 1)
+            delta_c_max = self.UpdateTrees(
+                self.k_hat, self.n)
 
         return (self.x, delta_c_max)
 
@@ -148,7 +154,7 @@ class AlgorytmB:
         delta_c_max = 0.0
         self.pi_max[0] = 0.0
         self.alpha_max[0] = -1
-        for j in range(k + 1, n - 1):
+        for j in range(k, n - 2):
             self.pi_min[j] = math.inf
             self.pi_max[j] = -math.inf
             self.alpha_min[j] = 0
@@ -169,11 +175,7 @@ class AlgorytmB:
                     self.pi_max[j] = self.pi_max[i] + cij
                     self.alpha_max[j] = link
             if self.alpha_max[j] != 0:
-                delta_c_max = max(
-                    *[a - b for (a, b) in zip(self.pi_max[k:n],
-                                              self.pi_min[k:n])],
-                    delta_c_max
-                )
+                delta_c_max = max(self.pi_max[n] - self.pi_min[n], delta_c_max)
         return delta_c_max
 
     def EqualizeCost(
