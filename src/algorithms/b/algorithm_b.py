@@ -1,6 +1,6 @@
 """Algorithm B Class"""
 import math
-from typing import List, Tuple
+from typing import Tuple
 
 from src.shared.graph import Graph
 from src.shared.link import Link
@@ -55,7 +55,7 @@ class AlgorytmB:
         self.graph = graph
         self.k_hat = 0
 
-    def CalculateEquilibrium(self) -> Tuple[List[List[int]], float]:
+    def CalculateEquilibrium(self) -> Tuple[Graph, float]:
         delta_c_max = self.UpdateTrees(1, self.graph.n + 1)
         while self.e < delta_c_max:
             self.ShiftFlow()

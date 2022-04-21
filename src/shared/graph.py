@@ -17,7 +17,7 @@ class Graph:
 
     def __init__(self, nodes, links, demands):
         self.A = self.CreateLinksDict(links)
-        self.nodes: dict[int, Node] = self.CreateNodesDict(nodes)
+        self.nodes: Dict[int, Node] = self.CreateNodesDict(nodes)
         self.n: int = nodes[-1][0]
 
         self.SetFlows(demands)
