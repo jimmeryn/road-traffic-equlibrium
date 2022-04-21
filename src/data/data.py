@@ -60,7 +60,7 @@ def get_network_for_city(city_name: str) -> pd.DataFrame:
     return net
 
 
-def get_nodes_for_city(city_name: str):
+def get_nodes_for_city(city_name: str) -> pd.DataFrame:
     root = get_root()
     nodesfile = os.path.join(root, city_name, f'{city_name}_node.tntp')
     nodes = pd.read_csv(nodesfile, skiprows=0, sep='\t')
