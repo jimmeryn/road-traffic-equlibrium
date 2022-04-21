@@ -8,9 +8,6 @@ from src.data.test import DATA_LIST, run_test
 
 
 def main():
-    run_test(0)
-    return
-
     user_input = None
     while True:
         print("Run testing for A Algorithm\n")

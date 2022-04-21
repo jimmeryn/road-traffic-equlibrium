@@ -27,7 +27,7 @@ class Graph:
     def CreateLinksDict(self, links):
         return dict(
             map(lambda link: (
-                createLinkKey(link[0], link[1]),
+                createLinkKey(int(link[0]), int(link[1])),
                 Link(link[0], link[1], link[4])
             ), links)
         )
@@ -35,7 +35,7 @@ class Graph:
     def CreateNodesDict(self, nodes):
         return dict(
             map(lambda node: (
-                node[0],
+                int(node[0]),
                 Node(node[0])
             ), nodes)
         )

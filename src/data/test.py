@@ -16,7 +16,7 @@ def run_test(city_index: int):
     start_time = time()
     print(f"Test started for {DATA_LIST[city_index]}...")
 
-    current_city = DATA_LIST[0]
+    current_city = DATA_LIST[city_index]
     [demands, nodes, network] = data.import_data_for_city(current_city)
 
     # pylint: disable=no-member
