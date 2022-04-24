@@ -19,7 +19,7 @@ class AlgorytmB:
     m : int
         Upper bound on number of arcs on a path — a scalar
     e : float
-        Upper bound on max-min path cost differential—a scalar
+        Upper bound on max-min path cost differential — a scalar
 
     Methods:
     -------
@@ -53,13 +53,17 @@ class AlgorytmB:
         self.m = m
         self.e = e
         self.graph = graph
-        self.k_hat = 0
+        self.k_hat = 1
 
     def CalculateEquilibrium(self) -> Tuple[Graph, float]:
         delta_c_max = self.UpdateTrees(1, self.graph.n + 1)
-        while self.e < delta_c_max:
+        iteration = 0
+        max_iteration_count = 100
+        while self.e < delta_c_max and iteration < max_iteration_count:
+            iteration += 1
             self.ShiftFlow()
-            delta_c_max = self.UpdateTrees(self.k_hat, self.graph.n + 1)
+            delta_c_max = self.UpdateTrees(1, self.graph.n + 1)
+            self.graph.LogFlow()
 
         return (self.graph, delta_c_max)
 
@@ -78,33 +82,29 @@ class AlgorytmB:
     def GetBranchNode(self, j: int):
         ij_min = self.graph.nodes[j].alpha_min
         ij_max = self.graph.nodes[j].alpha_max
-        x_min = self.graph.GetLink(ij_min.src, ij_min.dest).flow
-        x_max = self.graph.GetLink(ij_max.src, ij_max.dest).flow
-        c_min = self.graph.GetLink(ij_min.src, ij_min.dest).cost
-        c_max = self.graph.GetLink(ij_max.src, ij_max.dest).cost
-        c_der_min = self.graph.GetLink(ij_min.src, ij_min.dest).cost_der
-        c_der_max = self.graph.GetLink(ij_max.src, ij_max.dest).cost_der
+        x_min = ij_min.flow
+        x_max = ij_max.flow
+        c_min = ij_min.cost
+        c_max = ij_max.cost
+        c_der_min = ij_min.cost_der
+        c_der_max = ij_max.cost_der
         m_min = 1
         m_max = 1
         while ij_max.src != ij_min.src:
             while ij_min.src < ij_max.src:
                 ij_max = self.graph.nodes[ij_max.src].alpha_max
-                x_max = min(
-                    x_max, self.graph.GetLink(ij_max.src, ij_max.dest).flow)
+                x_max = min(x_max, ij_max.flow)
 
-                c_max += self.graph.GetLink(ij_max.src, ij_max.dest).cost
-                c_der_max += self.graph.GetLink(ij_max.src,
-                                                ij_max.dest).cost_der
+                c_max += ij_max.cost
+                c_der_max += ij_max.cost_der
                 m_max += 1
 
             while ij_max.src < ij_min.src:
                 ij_min = self.graph.nodes[ij_min.src].alpha_min
-                x_min = min(
-                    x_min, self.graph.GetLink(ij_min.src, ij_min.dest).flow)
+                x_min = min(x_min, ij_min.flow)
 
-                c_min += self.graph.GetLink(ij_min.src, ij_min.dest).cost
-                c_der_min += self.graph.GetLink(ij_min.src,
-                                                ij_min.dest).cost_der
+                c_min += ij_min.cost
+                c_der_min += ij_min.cost_der
                 m_min += 1
 
         exp_factor = 1 + math.floor(self.m - max(m_min, m_max) / 2)
@@ -114,17 +114,17 @@ class AlgorytmB:
         return [k, x_min, x_max, c_min, c_max, c_der_min, c_der_max, exp_factor]
 
     def UpdateTrees(self, k: int, n: int) -> float:
-        delta_c_max = 0.0
-        self.graph.nodes[k].pi_max = 0.0
-        self.graph.nodes[k].alpha_max = None
+        delta_c_max = 0
+        # self.graph.nodes[k].pi_max = 0.0
+        # self.graph.nodes[k].alpha_max = None
 
-        for j in range(k + 1, n - 2):
+        for j in range(k + 1, n - 1):
             dest_node = self.graph.nodes[j]
             dest_node.pi_min = math.inf
             dest_node.pi_max = -math.inf
             dest_node.alpha_min = None
             dest_node.alpha_max = None
-            for link in self.graph.A.values():
+            for link in self.graph.links.values():
                 src_node = self.graph.nodes[link.src]
 
                 # min distance
@@ -137,17 +137,25 @@ class AlgorytmB:
                 new_cost = src_node.pi_max + link.cost
                 if (
                     src_node.alpha_min is not None and
-                    link.flow > 0 and
+                    link.flow != 0 and
                     new_cost > dest_node.pi_max
                 ):
                     dest_node.pi_max = new_cost
                     dest_node.alpha_max = link
 
-            if dest_node.alpha_max != 0:
+            if dest_node.alpha_max is not None:
                 delta_c_max = max(
-                    self.graph.nodes[n - 1].pi_max - self.graph.nodes[n - 1].pi_min, delta_c_max)
+                    self.GetPiDiff(),
+                    delta_c_max
+                )
 
         return delta_c_max
+
+    def GetPiDiff(self):
+        pi_max_array = map(lambda node: node.pi_max, self.graph.nodes.values())
+        pi_min_array = map(lambda node: node.pi_min, self.graph.nodes.values())
+
+        return max(pi_max_array) - min(pi_min_array)
 
     def EqualizeCost(
         self,
@@ -210,14 +218,9 @@ class AlgorytmB:
             link: Link | None = self.graph.nodes[i][alpha_param]
             src = link.src
             dest = link.dest
-            self.graph.GetLink(src, dest).flow += delta_x
-            x_ij = self.graph.GetLink(src, dest).flow
+            link.AddFlow(delta_x)
+            x_ij = link.flow
             x_p = min(x_p, x_ij)
-
-            self.graph.GetLink(src, dest).cost = self.graph.GetLink(
-                src, dest).CalculateCost(x_ij)
-            self.graph.GetLink(src, dest).cost_der = self.graph.GetLink(
-                src, dest).CalculateCostDerivative(x_ij)
 
             c_p += self.graph.GetLink(src, dest).cost
             c_der_p += self.graph.GetLink(src, dest).cost_der
