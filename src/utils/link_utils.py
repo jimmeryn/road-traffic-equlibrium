@@ -1,9 +1,7 @@
 """
 Link utils file
 """
-from src.shared.link import Link
 
 
-def get_link_travel_time(link: Link, flow: int):
-    return link.free_flow_time * \
-        (1 + link.b * pow((flow / link.capacity), link.power))
+def create_link_key(from_node: int | float, to_node: int | float):
+    return f"{int(from_node)}_{int(to_node)}"
