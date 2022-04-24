@@ -8,7 +8,6 @@ from src.data.test import DATA_LIST, run_test
 
 
 def main():
-    user_input = None
     while True:
         print("Run testing for A Algorithm\n")
         print("0 - Exit program")
@@ -24,7 +23,7 @@ def main():
             city_index = int(user_input) - 1
             run_test(city_index)
             input("Press Enter to continue...\n")
-        except IndexError:
+        except (IndexError, ValueError):
             print("Wrong option. Please try again\n")
 
 
