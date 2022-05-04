@@ -83,7 +83,3 @@ class BushGraph:
 
     def GetLink(self, from_node: int, to_node: int) -> (Link | None):
         return self.links.get(create_link_key(from_node, to_node))
-
-    def LogFlow(self) -> None:
-        for key, link in self.links.items():
-            print(f"{key}: {link.flow}")

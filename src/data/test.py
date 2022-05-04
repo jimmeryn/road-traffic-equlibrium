@@ -36,7 +36,7 @@ def run_test(city_index: int, algorithmIndex: int = 1):
         )
     except (IndexError, ValueError):
         print("Error during algorithm initialisation...")
-    print("Created algorithm")
+    print("Created algorithm.")
     print(f"Test started for {current_city}...")
     start_time = time()
     CalculateEquilibrium(algorithm, MAX_ERROR, MAX_ITERATION_COUNT).Run()

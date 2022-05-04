@@ -4,7 +4,6 @@ from typing import Dict
 from src.algorithms.algorithm import Algorithm
 from src.algorithms.b.bush import Bush
 from src.shared.graph import Graph
-from src.utils.logger import Logger
 
 
 class AlgorithmB(Algorithm):
@@ -43,6 +42,5 @@ class AlgorithmB(Algorithm):
         for bush in self.bushes.values():
             for link_key, link in bush.subgraph.links.items():
                 self.graph.links[link_key].AddFlow(link.flow)
-        Logger.LogFlow(self.graph.links)
         self.graph.BuildTrees()
         return self.graph.GetMaxGap()

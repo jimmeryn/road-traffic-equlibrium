@@ -30,7 +30,6 @@ class Bush:
                 [k, *params] = self.GetBranchNode(node_index)
                 if k > 0:
                     self.EqualizeCost(k, node_index, *params)
-        self.subgraph.LogFlow()
 
     def GetBranchNode(self, j: int):
         ij_min = self.subgraph.nodes[j].alpha_min
