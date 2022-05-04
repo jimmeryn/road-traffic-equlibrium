@@ -9,19 +9,19 @@ class Link:
 
     def __init__(
         self,
-        init_node: int,
-        term_node: int,
+        init_node: int | float,
+        term_node: int | float,
         capacity: float,
-        length: int,
+        _length: int,
         free_flow_time: int,
         b: float,
         power: int,
-        speed_limit: int,
-        toll: int,
-        link_type: int,
+        _speed_limit: int,
+        _toll: int,
+        _link_type: int,
     ):
-        self.src = init_node
-        self.dest = term_node
+        self.src = int(init_node)
+        self.dest = int(term_node)
         self.fft = free_flow_time
         self.b = b
         self.k = capacity
@@ -48,10 +48,15 @@ class Link:
         self.cost = self.CalculateCost()
         self.cost_der = self.CalculateCostDerivative()
 
+    def ResetFlow(self):
+        self.flow = 0
+        self.cost = self.fft
+        self.cost_der = self.fft
+
     def CostFormula(self, x):
         # Use only when calculating new link cost or checking link cost for new flow
         return self.fft * (1 + self.b * math.pow(x / self.k, self.p))
 
-    def CostDerivativeFormula(self, x):
+    def CostDerivativeFormula(self, _x):
         # Use only when calculating new link cost derivative or checking link cost derivative for new flow
         return self.fft

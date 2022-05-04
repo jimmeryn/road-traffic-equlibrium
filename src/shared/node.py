@@ -9,8 +9,8 @@ from src.shared.link import Link
 class Node:
     """Node class"""
 
-    def __init__(self, index: int):
-        self.index = index
+    def __init__(self, index: int | float):
+        self.index = int(index)
         self.pi_max: float = -math.inf
         self.pi_min: float = math.inf
         self.alpha_max: Link | None = None
