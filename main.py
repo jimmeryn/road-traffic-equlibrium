@@ -1,30 +1,19 @@
-"""
-Main Program
-0 - Exit program
-1 - Four Nodes test
-"""
-
-from src.data.test import DATA_LIST, run_test
+""" Main Program """
+from src.data.test import run_test
+from src.utils.user_input import UserInput
 
 
 def main():
     while True:
-        print("Run testing for A Algorithm\n")
-        print("0 - Exit program")
-        print("".join((f"{index + 1} - {item}\n" for index,
-              item in enumerate(DATA_LIST))))
-        user_input = input("Data index: ")
-        print("\n")
-
-        if user_input == '0':
+        alg_index = UserInput.GetAlgorithm()
+        if alg_index == 0:
+            break
+        city_index = UserInput.GetCity()
+        if city_index == 0:
             break
 
-        try:
-            city_index = int(user_input) - 1
-            run_test(city_index)
-            input("Press Enter to continue...\n")
-        except (IndexError, ValueError):
-            print("Wrong option. Please try again\n")
+        run_test(city_index, alg_index)
+        input("Press Enter to continue...\n")
 
 
 if __name__ == "__main__":

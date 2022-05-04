@@ -1,30 +1,31 @@
-"""
-Testing funtion
-0 - Exit program
-1 - Four Nodes test
-2 - Braess test
-"""
+""" Testing funtion """
 from time import time
 
 import src.data.data as data
 from src.algorithms.b.algorithm_b import AlgorithmB
 from src.algorithms.calculate_equilibrium import CalculateEquilibrium
 
-DATA_LIST = ['FourNodes', 'SiouxFalls', 'Braess']
+DATA_LIST = {
+    1: 'FourNodes',
+    2: 'SiouxFalls',
+    3: 'Braess',
+}
 ALGORITHMS = {
     1: AlgorithmB,
 }
-
 MAX_ERROR = 0.25
 MAX_ITERATION_COUNT = 100
 
 
-def run_test(city_index: int, algorithmIndex: int = 1):
-    current_city = DATA_LIST[city_index]
-    print(current_city)
-    print(f"Importing {current_city} data...")
-    [demands, nodes, network] = data.import_data_for_city(current_city)
-    print("Data imported.")
+def run_test(city_index: int, algorithmIndex: int):
+    try:
+        current_city = DATA_LIST[city_index]
+        print(current_city)
+        print(f"Importing {current_city} data...")
+        [demands, nodes, network] = data.import_data_for_city(current_city)
+        print("Data imported.")
+    except (IndexError, ValueError):
+        print("Error during data importing...")
 
     print("Creating algorithm and data structures...")
     try:
