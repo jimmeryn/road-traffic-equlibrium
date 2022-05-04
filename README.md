@@ -4,17 +4,22 @@ Implementation and testing for 3 algorithms used for the traffic assignment prob
 
 ## Development:
 
-To save the packages installed in the project run:
+### Requirements:
 
-```
-pip freeze > requirements.txt
-```
+The project was developed with:
+
+- Python 3.10.2
+- Pip 21.2.4
+
+### Install packages:
 
 To restore packages run:
 
 ```
 pip install -r requirements.txt
 ```
+
+### Run project:
 
 Running env:
 
@@ -23,8 +28,17 @@ Running env:
 ```
 
 Running MyPy;
+
 ```
 mypy main.py
+```
+
+### Save installed packages:
+
+To save the packages installed in the project run:
+
+```
+pip freeze > requirements.txt
 ```
 
 ## How to read data files:
