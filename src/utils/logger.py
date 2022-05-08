@@ -75,11 +75,11 @@ class Logger:
     @staticmethod
     def TestSolution(solution, graph: Graph):
         print("Testing solution...")
-        max_dif = math.inf
+        max_dif = 0
         for link in solution.values:
             link_key = create_link_key(link[0], link[1])
             graph_link = graph.links[link_key]
             diff = abs(graph_link.flow - link[2])
-            max_dif = min(max_dif, diff)
+            max_dif = max(max_dif, diff)
             assert diff < 1, f"Expected link flow to be {link[2]}, got {graph_link.flow}."
         print(f"Test passed. Max difference: {max_dif}")
