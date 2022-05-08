@@ -16,7 +16,8 @@ class Bush:
         self.error = error
         # not sure if this should be calculated or to get this from links list
         self.m = len(self.subgraph.links) - 1
-        self.BuildMinTree()
+        self.subgraph.UpdateTopoSort()
+        self.BuildTrees()
         self.ApplyInitialDemands(demands)
 
     def UpdateTopoSort(self):
@@ -94,6 +95,7 @@ class Bush:
                 delta_x,
                 delta_c
             ] = self.GetDeltaXandC(x_min, x_max, c_min, c_max, c_der_min, c_der_max)
+            self.BuildTrees()
         return
 
     def GetDeltaXandC(
@@ -111,8 +113,10 @@ class Bush:
         if c_der_max + c_der_min <= 0:
             delta_x = x_max if c_min <= c_max else -x_min
         else:
-            cost = (c_max - c_min) / (c_der_max + c_der_min)
-            delta_x = min(delta_x_max, cost)
+            delta_x = min(
+                delta_x_max,
+                (c_max - c_min) / (c_der_max + c_der_min)
+            )
 
         return (delta_x, abs(c_max - c_min))
 
@@ -154,42 +158,18 @@ class Bush:
                 node.alpha_min.AddFlow(demand)
                 node = self.subgraph.nodes[node.alpha_min.src]
 
-    def BuildMinTree(self):  # fix this funtion
-        for node in self.subgraph.nodes.values():
-            node.pi_min = math.inf
-            node.alpha_min = None
-
-        self.subgraph.nodes[self.originIndex].pi_min = 0
-
-        # on Sioux Falls data go into cycle at 7->18 nodes
-        # maybe check if reverse order helps
-        for _ in self.subgraph.nodesOrder:
-            for link in self.subgraph.links.values():
-                cij = link.cost
-                src = link.src
-                dest = link.dest
-                src_node = self.subgraph.nodes[src]
-                dest_node = self.subgraph.nodes[dest]
-
-                # min distance
-                new_cost = src_node.pi_min + \
-                    cij if src_node.pi_min != math.inf else cij
-                if new_cost < dest_node.pi_min:
-                    dest_node.pi_min = new_cost
-                    dest_node.alpha_min = link
-
     def BuildTrees(self):
         for node in self.subgraph.nodes.values():
-            node.pi_max = -math.inf
+            node.pi_max = 0
             node.pi_min = math.inf
             node.alpha_max = None
             node.alpha_min = None
 
-        self.subgraph.nodes[self.originIndex].pi_max = 0
         self.subgraph.nodes[self.originIndex].pi_min = 0
 
-        for _ in self.subgraph.nodesOrder:
-            for link in self.subgraph.links.values():
+        for node_index in self.subgraph.nodesOrder:
+            incoming_links = self.subgraph.GetIncomingLinks(node_index)
+            for link in incoming_links:
                 cij = link.cost
                 src = link.src
                 dest = link.dest
@@ -197,15 +177,43 @@ class Bush:
                 dest_node = self.subgraph.nodes[dest]
 
                 # min distance
-                new_cost = src_node.pi_min + \
-                    cij if src_node.pi_min != math.inf else cij
+                new_cost = src_node.pi_min + cij
                 if new_cost < dest_node.pi_min:
                     dest_node.pi_min = new_cost
                     dest_node.alpha_min = link
 
                 # max distance
-                new_cost = src_node.pi_max + \
-                    cij if src_node.pi_max != -math.inf else cij
-                if new_cost > dest_node.pi_max:
+                new_cost = src_node.pi_max + cij
+                if new_cost >= dest_node.pi_max:
+                    dest_node.pi_max = new_cost
+                    dest_node.alpha_max = link
+
+    def BuildTreesDijkstra(self) -> None:
+        for node in self.subgraph.nodes.values():
+            node.pi_max = 0
+            node.pi_min = math.inf
+            node.alpha_max = None
+            node.alpha_min = None
+
+        self.subgraph.nodes[self.originIndex].pi_min = 0
+
+        for node_index in self.subgraph.nodesOrder:
+            incoming_links = self.subgraph.GetIncomingLinks(node_index)
+            for link in incoming_links:
+                cij = link.cost
+                src = link.src
+                dest = link.dest
+                src_node = self.subgraph.nodes[src]
+                dest_node = self.subgraph.nodes[dest]
+
+                # min distance
+                new_cost = src_node.pi_min + cij
+                if new_cost < dest_node.pi_min:
+                    dest_node.pi_min = new_cost
+                    dest_node.alpha_min = link
+
+                # max distance
+                new_cost = src_node.pi_max + cij
+                if new_cost >= dest_node.pi_max:
                     dest_node.pi_max = new_cost
                     dest_node.alpha_max = link
