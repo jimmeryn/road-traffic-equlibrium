@@ -10,7 +10,7 @@ class AlgorithmB(Algorithm):
     """ Algorithm B Class """
 
     def __init__(self, nodes, networks, demands, error: float) -> None:
-        self.graph = Graph(nodes, networks)
+        super().__init__(nodes, networks)
         self.bushes = self.CreateBushes(demands, self.graph, error)
 
     def CreateBushes(self, demands, graph: Graph, error: float) -> Dict[int, Bush]:

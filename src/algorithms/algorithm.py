@@ -9,10 +9,10 @@ class Algorithm(ABC):
     Base Algorithm abstract class
     All origin based alogrithms should extend this class
     """
-    @property
-    @abstractmethod
-    def graph(self) -> Graph:
-        pass
+
+    def __init__(self, nodes, networks):
+        super().__init__()
+        self.graph = Graph(nodes, networks)
 
     @abstractmethod
     def Iteration(self) -> None:
