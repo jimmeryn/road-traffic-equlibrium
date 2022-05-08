@@ -72,7 +72,7 @@ def get_nodes_for_city(city_name: str) -> pd.DataFrame:
     return nodes
 
 
-def import_matrix(city_name):
+def import_matrix(city_name: str):
     root = get_root()
     tripsfile = os.path.join(root, city_name, f'{city_name}_trips.tntp')
     with open(tripsfile, 'r', encoding='utf-8') as file:
@@ -101,9 +101,19 @@ def import_matrix(city_name):
         return mat
 
 
+def get_solution_for_city(city_name: str):
+    root = get_root()
+    solutionfile = os.path.join(root, city_name, f'{city_name}_flow.tntp')
+    solution = pd.read_csv(solutionfile, skiprows=0, sep='\t')
+    trimmed = [s.strip().lower() for s in solution.columns]
+    solution.columns = trimmed
+    return solution
+
+
 def import_data_for_city(city_name):
     demands = import_matrix(city_name)
     nodes = get_nodes_for_city(city_name)
     network = get_network_for_city(city_name)
+    solution = get_solution_for_city(city_name)
 
-    return [demands, nodes, network]
+    return (demands, nodes, network, solution)
