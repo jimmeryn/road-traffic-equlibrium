@@ -53,10 +53,10 @@ class Link:
         self.cost = self.fft
         self.cost_der = self.fft
 
-    def CostFormula(self, x):
+    def CostFormula(self, x: int):
         # Use only when calculating new link cost or checking link cost for new flow
         return self.fft * (1 + self.b * math.pow(x / self.k, self.p))
 
-    def CostDerivativeFormula(self, _x):
+    def CostDerivativeFormula(self, x: int):
         # Use only when calculating new link cost derivative or checking link cost derivative for new flow
-        return self.fft
+        return self.fft * x / self.k
