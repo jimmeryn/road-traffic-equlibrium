@@ -6,7 +6,7 @@ class TAPAS(Algorithm):
     """ TAPAS Class """
 
     def __init__(self, nodes, networks, demands, error: float) -> None:
-        self.graph = None
+        super().__init__(nodes, networks)
 
     def Iteration(self) -> None:
         pass
