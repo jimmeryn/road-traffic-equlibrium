@@ -28,4 +28,4 @@ class CalculateEquilibrium:
 
         print(f"Algorithm finished after {iteration_count} iterations.")
         print(f"Calculated max cost difference = {delta_c_max}.")
-        return
+        return self.algorithm.graph
