@@ -8,7 +8,7 @@ class CalculateEquilibrium:
     def __init__(
         self,
         algorithm: Algorithm,
-        e: float,
+        e: float | int,
         max_iteration_count: int = 100
     ):
         self.algorithm = algorithm
