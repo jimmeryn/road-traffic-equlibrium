@@ -1,8 +1,11 @@
 """ Logger """
+import math
 from typing import Dict
 
+from src.shared.graph import Graph
 from src.shared.link import Link
 from src.shared.node import Node
+from src.utils.link_utils import create_link_key
 
 
 class Logger:
@@ -17,6 +20,14 @@ class Logger:
     def LogCosts(links: Dict[int, Link]) -> None:
         for key, link in links.items():
             print(f"{key}: {link.cost}")
+
+    @staticmethod
+    def LogLinks(links: Dict[int, Link]) -> None:
+        print("Links:")
+        print("source_target: c(flow) = cost")
+        for key, link in links.items():
+            print(f"{key}: c({link.flow}) = {link.cost}")
+        print("\n")
 
     @staticmethod
     def LogGraph(nodes: Dict[int, Node]) -> None:
@@ -43,3 +54,32 @@ class Logger:
                 if current_node.alpha_min is None:
                     break
                 current_node = nodes[current_node.alpha_min.src]
+
+    @staticmethod
+    def LogSolution(solution):
+        print("Solution:")
+        for link in solution.values:
+            print(f"{int(link[0])}_{int(link[1])}: c({link[2]}) = {link[3]}")
+
+    @staticmethod
+    def CompareSolution(solution, graph: Graph):
+        print("Compare Solution:")
+        print("source_target: c(calculated_flow | solution_flow) = calculated_cost | solution_cost")
+        for link in solution.values:
+            link_key = f"{int(link[0])}_{int(link[1])}"
+            graph_link = graph.links[link_key]
+            print(
+                f"{link_key}: c({graph_link.flow} | {link[2]}) = {graph_link.cost} | {link[3]}"
+            )
+
+    @staticmethod
+    def TestSolution(solution, graph: Graph):
+        print("Testing solution...")
+        max_dif = math.inf
+        for link in solution.values:
+            link_key = create_link_key(link[0], link[1])
+            graph_link = graph.links[link_key]
+            diff = abs(graph_link.flow - link[2])
+            max_dif = min(max_dif, diff)
+            assert diff < 1, f"Expected link flow to be {link[2]}, got {graph_link.flow}."
+        print(f"Test passed. Max difference: {max_dif}")
