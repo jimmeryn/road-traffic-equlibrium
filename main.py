@@ -2,6 +2,9 @@
 from src.data.test import run_test
 from src.utils.user_input import UserInput
 
+MAX_ERROR = 0.01
+MAX_ITERATION_COUNT = 10
+
 
 def main():
     while True:
@@ -12,8 +15,9 @@ def main():
         if city_index == 0:
             break
 
-        run_test(city_index, alg_index)
-        input("Press Enter to continue...\n")
+        run_test(city_index, alg_index, MAX_ERROR, MAX_ITERATION_COUNT)
+        if input("Press Enter to continue or 0 to exit.\n") == '0':
+            break
 
 
 if __name__ == "__main__":

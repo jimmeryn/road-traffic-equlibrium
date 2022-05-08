@@ -38,12 +38,8 @@ class Graph:
     def GetMaxGap(self) -> float:
         gap = 0
         for node in self.nodes.values():
-            if node.pi_max is None or node.pi_min is None:
-                continue
-            new_gap = node.pi_max - node.pi_min
-            if new_gap <= gap:
-                continue
-            gap = new_gap
+            if node.pi_max is not None and node.pi_min is not None:
+                gap = max(node.pi_max - node.pi_min, gap)
         return gap
 
     def GetNeighbors(self, index: int) -> List[int]:

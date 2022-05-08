@@ -9,12 +9,6 @@ def wrong_option():
 class UserInput:
     """
     Class used for the getting user input and displaying initial messages to the user.
-    Algorithm Options:
-    0 - Exit program
-    1 - Algorithm B
-    Test options:
-    0 - Exit program
-    1 - Four Nodes test
     """
     @staticmethod
     def GetAlgorithm() -> int:
