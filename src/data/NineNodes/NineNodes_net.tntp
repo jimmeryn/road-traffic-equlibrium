@@ -1,7 +1,7 @@
-<NUMBER OF ZONES> 4
-<NUMBER OF NODES> 4
+<NUMBER OF ZONES> 9
+<NUMBER OF NODES> 9
 <FIRST THRU NODE> 1
-<NUMBER OF LINKS> 5
+<NUMBER OF LINKS> 12
 <ORIGINAL HEADER>~ 	Init node 	Term node 	Capacity 	Length 	Free Flow Time 	B	Power	Speed limit 	Toll 	Type	;
 <END OF METADATA>
 
