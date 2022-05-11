@@ -1,5 +1,4 @@
 """ Logger """
-import math
 from typing import Dict
 
 from src.shared.graph import Graph
@@ -22,7 +21,7 @@ class Logger:
             print(f"{key}: {link.cost}")
 
     @staticmethod
-    def LogLinks(links: Dict[int, Link]) -> None:
+    def LogGraphLinks(links: Dict[int, Link]) -> None:
         print("Links:")
         print("source_target: c(flow) = cost")
         for key, link in links.items():
@@ -30,7 +29,7 @@ class Logger:
         print("\n")
 
     @staticmethod
-    def LogGraph(nodes: Dict[int, Node]) -> None:
+    def LogGraphNodes(nodes: Dict[int, Node]) -> None:
         for node in nodes.values():
             print(node.index)
             print(f"pi_max: {node.pi_max}")
