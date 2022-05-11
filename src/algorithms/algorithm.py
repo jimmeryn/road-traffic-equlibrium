@@ -1,7 +1,7 @@
 """ Base Algorithm """
 from abc import ABC, abstractmethod
 
-from src.shared.graph import Graph
+from src.shared.network import Network
 
 
 class Algorithm(ABC):
@@ -10,9 +10,9 @@ class Algorithm(ABC):
     All origin based alogrithms should extend this class
     """
 
-    def __init__(self, nodes, networks):
+    def __init__(self, nodes, links):
         super().__init__()
-        self.graph = Graph(nodes, networks)
+        self.network = Network(nodes, links)
 
     @abstractmethod
     def Iteration(self) -> None:

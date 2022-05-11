@@ -1,5 +1,6 @@
 """ Graph Class """
 import math
+from abc import ABC
 from typing import Dict, List
 
 from src.shared.link import Link
@@ -7,33 +8,15 @@ from src.shared.node import Node
 from src.utils.link_utils import create_link_key
 
 
-class Graph:
+class Graph(ABC):
     """
     Class used to store all graph info
     """
 
-    def __init__(self, nodes, links):
-        self.links = self.CreateLinksDict(links)
-        self.nodes = self.CreateNodesDict(nodes)
-        self.sortedNodes = self.GetTopoSortedNodes()
-        self.n: int = int(nodes[-1][0])
-        self.BuildTrees()
-
-    def CreateLinksDict(self, links) -> Dict[str, Link]:
-        return dict(
-            map(lambda link: (
-                create_link_key(link[0], link[1]),
-                Link(*link)
-            ), links)
-        )
-
-    def CreateNodesDict(self, nodes) -> Dict[int, Node]:
-        return dict(
-            map(lambda node: (
-                int(node[0]),
-                Node(node[0])
-            ), nodes)
-        )
+    def __init__(self):
+        self.links: Dict[str, Link]
+        self.nodes: Dict[int, Node]
+        self.nodesOrder: List[int]
 
     def GetMaxGap(self) -> float:
         gap = 0
@@ -43,49 +26,55 @@ class Graph:
         return gap
 
     def GetNeighbors(self, index: int) -> List[int]:
-        return list(map(lambda link: link.dest, filter(lambda link: link.src == index, self.links.values())))
+        return list(
+            map(
+                lambda link: link.dest,
+                filter(
+                    lambda link: link.src == index,
+                    self.links.values()
+                )
+            )
+        )
 
-    def TopogologicalSortUtil(self, v: int, visited: List[int], stack: List[Node]) -> None:
-        visited[v - 1] = True
-        for i in self.GetNeighbors(v):
-            if not visited[i - 1]:
-                self.TopogologicalSortUtil(i, visited, stack)
+    def TopogologicalSortUtil(self, node_index: int, visited: List[int], stack: List[int]) -> None:
+        visited[node_index - 1] = True
+        for neighbor_index in self.GetNeighbors(node_index):
+            if not visited[neighbor_index - 1]:
+                self.TopogologicalSortUtil(neighbor_index, visited, stack)
 
-        stack.insert(0, self.nodes[v])
+        stack.insert(0, self.nodes[node_index].index)
 
-    def GetTopoSortedNodes(self) -> List[Node]:
+    def GetTopoSortedNodesIndexes(self, node_index: int | None = None) -> List[int]:
         ordered_nodes = []
         visited = [False] * len(self.nodes)
-        for k in list(self.nodes):
-            if not visited[k - 1]:
-                self.TopogologicalSortUtil(k, visited, ordered_nodes)
+        if node_index is not None:
+            self.TopogologicalSortUtil(node_index, visited, ordered_nodes)
+        else:
+            for node_index in list(self.nodes):
+                if not visited[node_index - 1]:
+                    self.TopogologicalSortUtil(
+                        node_index,
+                        visited,
+                        ordered_nodes
+                    )
 
         return ordered_nodes
 
-    def TopoSortNodes(self) -> None:
-        self.sortedNodes = self.GetTopoSortedNodes()
+    def UpdateTopoSort(self):
+        self.nodesOrder = self.GetTopoSortedNodesIndexes()
 
-    def SetInitialFlows(self, demands) -> None:
-        for from_node, demands_array in enumerate(demands):
-            for to_node, demand in enumerate(demands_array):
-                if demand != 0:
-                    link = self.nodes[to_node + 1].alpha_min
-                    while link is not None and link.src == from_node + 1:
-                        link.AddFlow(demand)
-                        link = self.nodes[link.src].alpha_min
+    def BuildTrees(self, origin_index: int = 1) -> None:
+        for node in self.nodes.values():
+            node.pi_max = -math.inf
+            node.pi_min = math.inf
+            node.alpha_max = None
+            node.alpha_min = None
 
-    def BuildTrees(self) -> None:
-        for i in range(1, self.n + 1):
-            self.nodes[i].pi_max = -math.inf
-            self.nodes[i].pi_min = math.inf
-            self.nodes[i].alpha_max = None
-            self.nodes[i].alpha_min = None
+        self.nodes[origin_index].pi_min = 0
+        self.nodes[origin_index].pi_max = 0
 
-        self.nodes[1].pi_max = 0
-        self.nodes[1].pi_min = 0
-
-        for _ in range(1, self.n):
-            for link in self.links.values():
+        for node_index in self.nodesOrder:
+            for link in self.GetOutcomingLinks(node_index):
                 cij = link.cost
                 src = link.src
                 dest = link.dest
@@ -109,12 +98,18 @@ class Graph:
     def GetLink(self, from_node: int, to_node: int) -> (Link | None):
         return self.links.get(create_link_key(from_node, to_node))
 
-    def GetFlowArray(self) -> List[int]:
-        flow_array = []
+    def GetIncomingLinks(self, node_index: int) -> List[Link]:
+        links = []
         for link in self.links.values():
-            flow_array.append(link.flow)
+            if link.dest == node_index:
+                links.append(link)
 
-        return flow_array
+        return links
 
-    def RelabelNodes(self, i: int, j: int) -> None:
-        self.nodes[i], self.nodes[j] = self.nodes[j], self.nodes[i]
+    def GetOutcomingLinks(self, node_index: int) -> List[Link]:
+        links = []
+        for link in self.links.values():
+            if link.src == node_index:
+                links.append(link)
+
+        return links

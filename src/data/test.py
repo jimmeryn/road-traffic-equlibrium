@@ -50,11 +50,12 @@ def run_test(
     print("Created algorithm.")
     print(f"Test started for {current_city}...")
     start_time = time()
-    graph = CalculateEquilibrium(
+    network = CalculateEquilibrium(
         algorithm,
         max_error,
         max_iteration_count
     ).Run()
-    Logger.TestSolution(solution, graph)
+    Logger.TestSolution(solution, network)
+    Logger.CompareSolution(solution, network)
     print(f"Test end after {time() - start_time} sec.")
     return

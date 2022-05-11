@@ -3,20 +3,20 @@ import math
 from typing import Tuple
 
 from src.algorithms.b.bush_graph import BushGraph
-from src.shared.graph import Graph
 from src.shared.link import Link
+from src.shared.network import Network
 
 
 class Bush:
     """ Bush Class """
 
-    def __init__(self, originIndex: int, graph: Graph, demands, error: float) -> None:
+    def __init__(self, originIndex: int, network: Network, demands, error: float) -> None:
         self.originIndex = originIndex
-        self.subgraph = BushGraph(graph, originIndex)
+        self.subgraph = BushGraph(network, originIndex)
         self.error = error
         # not sure if this should be calculated or to get this from links list
         self.m = len(self.subgraph.links) - 1
-        self.subgraph.UpdateTopoSort()
+        self.UpdateTopoSort()
         self.BuildTrees()
         self.ApplyInitialDemands(demands)
 
@@ -80,6 +80,7 @@ class Bush:
     ) -> None:
         [delta_x, delta_c] = self.GetDeltaXandC(
             x_min, x_max, c_min, c_max, c_der_min, c_der_max)
+        iteration_count = 0
         while exp_factor * delta_c > self.error:
             [
                 x_min,
@@ -96,6 +97,7 @@ class Bush:
                 delta_c
             ] = self.GetDeltaXandC(x_min, x_max, c_min, c_max, c_der_min, c_der_max)
             self.BuildTrees()
+            iteration_count += 1
         return
 
     def GetDeltaXandC(
@@ -120,7 +122,13 @@ class Bush:
 
         return (delta_x, abs(c_max - c_min))
 
-    def UpdatePathFlow(self, delta_x: int, k: int, j: int, alpha_param: str) -> Tuple[int, float, float]:
+    def UpdatePathFlow(
+        self,
+        delta_x: int,
+        k: int,
+        j: int,
+        alpha_param: str
+    ) -> Tuple[int, float, float]:
         x_p = math.inf
         c_p = 0.0
         c_der_p = 0.0
@@ -139,11 +147,16 @@ class Bush:
 
         return (x_p, c_p, c_der_p)
 
+    def BuildTrees(self):
+        self.subgraph.BuildTrees(self.originIndex)
+
     def RemoveUnusedLinks(self) -> None:
+        # Remove links with zero flow from the subgraph & maintain connectivity
         pass
 
     def Improve(self):
-        pass
+        self.BuildTrees()
+        # Add better links
 
     def ApplyInitialDemands(self, demands):
         for index, demand in enumerate(demands):
@@ -152,68 +165,6 @@ class Bush:
             node_index = index + 1
             origin_node = self.subgraph.nodes[self.originIndex]
             node = self.subgraph.nodes[node_index]
-            while True:
-                if origin_node == node:
-                    break
+            while origin_node != node:
                 node.alpha_min.AddFlow(demand)
                 node = self.subgraph.nodes[node.alpha_min.src]
-
-    def BuildTrees(self):
-        for node in self.subgraph.nodes.values():
-            node.pi_max = 0
-            node.pi_min = math.inf
-            node.alpha_max = None
-            node.alpha_min = None
-
-        self.subgraph.nodes[self.originIndex].pi_min = 0
-
-        for node_index in self.subgraph.nodesOrder:
-            incoming_links = self.subgraph.GetIncomingLinks(node_index)
-            for link in incoming_links:
-                cij = link.cost
-                src = link.src
-                dest = link.dest
-                src_node = self.subgraph.nodes[src]
-                dest_node = self.subgraph.nodes[dest]
-
-                # min distance
-                new_cost = src_node.pi_min + cij
-                if new_cost < dest_node.pi_min:
-                    dest_node.pi_min = new_cost
-                    dest_node.alpha_min = link
-
-                # max distance
-                new_cost = src_node.pi_max + cij
-                if new_cost >= dest_node.pi_max:
-                    dest_node.pi_max = new_cost
-                    dest_node.alpha_max = link
-
-    def BuildTreesDijkstra(self) -> None:
-        for node in self.subgraph.nodes.values():
-            node.pi_max = 0
-            node.pi_min = math.inf
-            node.alpha_max = None
-            node.alpha_min = None
-
-        self.subgraph.nodes[self.originIndex].pi_min = 0
-
-        for node_index in self.subgraph.nodesOrder:
-            incoming_links = self.subgraph.GetIncomingLinks(node_index)
-            for link in incoming_links:
-                cij = link.cost
-                src = link.src
-                dest = link.dest
-                src_node = self.subgraph.nodes[src]
-                dest_node = self.subgraph.nodes[dest]
-
-                # min distance
-                new_cost = src_node.pi_min + cij
-                if new_cost < dest_node.pi_min:
-                    dest_node.pi_min = new_cost
-                    dest_node.alpha_min = link
-
-                # max distance
-                new_cost = src_node.pi_max + cij
-                if new_cost >= dest_node.pi_max:
-                    dest_node.pi_max = new_cost
-                    dest_node.alpha_max = link
