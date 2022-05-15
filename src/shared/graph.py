@@ -67,33 +67,29 @@ class Graph(ABC):
 
     def BuildTrees(self, origin_index: int = 1) -> None:
         for node in self.nodes.values():
-            node.pi_max = -math.inf
+            node.pi_max = 0
             node.pi_min = math.inf
             node.alpha_max = None
             node.alpha_min = None
 
         self.nodes[origin_index].pi_min = 0
-        self.nodes[origin_index].pi_max = 0
 
         for node_index in self.nodesOrder:
-            for link in self.GetOutcomingLinks(node_index):
+            links = self.GetIncomingLinks(node_index)
+            dest_node = self.nodes[node_index]
+            for link in links:
+                src_node = self.nodes[link.src]
                 cij = link.cost
-                src = link.src
-                dest = link.dest
-                src_node = self.nodes[src]
-                dest_node = self.nodes[dest]
 
                 # min distance
-                new_cost = src_node.pi_min + \
-                    cij if src_node.pi_min != math.inf else cij
+                new_cost = src_node.pi_min + cij
                 if new_cost < dest_node.pi_min:
                     dest_node.pi_min = new_cost
                     dest_node.alpha_min = link
 
                 # max distance
-                new_cost = src_node.pi_max + \
-                    cij if src_node.pi_max != -math.inf else cij
-                if new_cost > dest_node.pi_max:
+                new_cost = src_node.pi_max + cij
+                if new_cost >= dest_node.pi_max:
                     dest_node.pi_max = new_cost
                     dest_node.alpha_max = link
 
