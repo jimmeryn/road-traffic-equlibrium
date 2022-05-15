@@ -1,10 +1,11 @@
 """ Bush Class"""
 import math
-from typing import Tuple
+from typing import List, Tuple
 
 from src.algorithms.b.bush_graph import BushGraph
 from src.shared.link import Link
 from src.shared.network import Network
+from src.utils.link_utils import create_link_key
 
 
 class Bush:
@@ -13,18 +14,14 @@ class Bush:
     def __init__(self, originIndex: int, network: Network, demands, error: float) -> None:
         self.originIndex = originIndex
         self.p2Cont = []
+        self.subgraph = BushGraph(network, originIndex, demands)
         self.error = error
-        # not sure if this should be calculated or to get this from links list
-        self.m = len(self.subgraph.links) - 1
-        self.UpdateTopoSort()
-        self.BuildTrees()
-        self.ApplyInitialDemands(demands)
+        self.m = len(self.subgraph.nodes) - 1
 
     def UpdateTopoSort(self):
-        self.subgraph.UpdateTopoSort()
+        self.subgraph.UpdateTopoSort(self.originIndex)
 
     def Equilibrate(self) -> None:
-        self.UpdateTopoSort()
         for node_index in reversed(self.subgraph.nodesOrder):
             node = self.subgraph.nodes[node_index]
             if node.alpha_max and node.pi_min < node.pi_max:
@@ -215,6 +212,107 @@ class Bush:
 
         return True
 
-            while origin_node != node:
-                node.alpha_min.AddFlow(demand)
-                node = self.subgraph.nodes[node.alpha_min.src]
+    # Equilibrate second version
+
+    def Equilibrate1(self) -> None:
+        for node_index in reversed(self.subgraph.nodesOrder):
+            self.PerformFlowMove(node_index)
+
+    def PerformFlowMove(self, node_index):
+        node = self.subgraph.nodes[node_index]
+        # if node.alpha_max and node.pi_min < node.pi_max:
+        if node.pi_max - node.pi_min < self.error:
+            return
+        min_link = node.alpha_min
+        max_link = node.alpha_max
+        if min_link is None or max_link is None:
+            return
+
+        #  remember to iterate in reverse
+        min_path: List[Link] = []
+        max_path: List[Link] = []
+        min_dist = 0.0
+        max_dist = 0.0
+        min_node = self.subgraph.nodes[min_link.src]
+        max_node = self.subgraph.nodes[max_link.src]
+
+        if min_node.index != max_node.index:
+            min_path.append(min_link)
+            min_dist += min_link.cost
+            max_path.append(max_link)
+            max_dist += max_link.cost
+
+        elif min_link != max_link:
+            min_path.append(min_link)
+            min_dist += min_link.cost
+            max_path.append(max_link)
+            max_dist += max_link.cost
+
+        while min_node.index != max_node.index:
+            if min_node.index < max_node.index:
+                min_link = min_node.alpha_min
+                if min_link is not None:
+                    min_node = self.subgraph.nodes[min_link.src]
+                    min_path.append(min_link)
+                    min_dist += min_link.cost
+            else:
+                max_link = max_node.alpha_max
+                if max_link is not None:
+                    max_node = self.subgraph.nodes[max_link.src]
+                    max_path.append(max_link)
+                    max_dist += max_link.cost
+
+        if not min_path or not max_path or max_dist - min_dist > self.error:
+            delta_x = 0.0
+            min_path_curr_cost = min_dist
+            max_path_curr_cost = max_dist
+
+            while delta_x > 0 and max_dist > min_dist:
+                delta_x = self.CalculateFlowStep(
+                    min_path,
+                    max_path,
+                    min_path_curr_cost,
+                    max_path_curr_cost
+                )
+
+                min_dist = 0.0
+                for link in min_path:
+                    link.AddFlow(delta_x)
+                    min_dist += link.cost
+
+                max_dist = 0.0
+                for link in max_path:
+                    link.AddFlow(delta_x)
+                    max_dist += link.cost
+
+                min_path_curr_cost = min_dist
+                max_path_curr_cost = max_dist
+
+    def CalculateFlowStep(
+        self,
+        min_path: List[Link],
+        max_path: List[Link],
+        min_path_curr_cost: float,
+        max_path_curr_cost: float
+    ) -> float:
+        delta_cost = max_path_curr_cost - min_path_curr_cost
+        if delta_cost <= 0:
+            return 0.0
+        delta_cost_der = 0.0
+        for link in reversed(min_path):
+            delta_cost_der += link.cost_der
+        min_move = math.inf
+        o_flow = 0.0
+        for link in reversed(max_path):
+            delta_cost_der += link.cost_der
+            # oFlow = getOriginFlow(link->getIndex()) # not sure what it's doing
+            o_flow = link.flow
+            if o_flow < min_move:
+                min_move = o_flow
+
+        delta_x_max = delta_cost / delta_cost_der
+        if delta_x_max > min_move:
+            return min_move
+        return delta_x_max
+
+    # Equilibrate second version END
