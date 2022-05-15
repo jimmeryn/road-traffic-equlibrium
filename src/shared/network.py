@@ -18,7 +18,6 @@ class Network(Graph):
         self.nodes = self.CreateNodesDict(nodes)
         self.nodesOrder = self.GetTopoSortedNodesIndexes()
         self.n: int = int(nodes[-1][0])
-        self.BuildTrees()
 
     def CreateLinksDict(self, links) -> Dict[str, Link]:
         return dict(
