@@ -12,7 +12,7 @@ class Bush:
 
     def __init__(self, originIndex: int, network: Network, demands, error: float) -> None:
         self.originIndex = originIndex
-        self.subgraph = BushGraph(network, originIndex)
+        self.p2Cont = []
         self.error = error
         # not sure if this should be calculated or to get this from links list
         self.m = len(self.subgraph.links) - 1
@@ -151,20 +151,70 @@ class Bush:
         self.subgraph.BuildTrees(self.originIndex)
 
     def RemoveUnusedLinks(self) -> None:
-        # Remove links with zero flow from the subgraph & maintain connectivity
-        pass
+        self.subgraph.RemoveEmptyLinks()
 
     def Improve(self):
         self.BuildTrees()
-        # Add better links
+        added_better_links = self.AddBetterLinks()
+        if added_better_links:
+            self.UpdateTopoSort()
+            self.BuildTrees()
 
-    def ApplyInitialDemands(self, demands):
-        for index, demand in enumerate(demands):
-            if demand == 0:
+    # TODO: Probably should move this 3 metods to the BushGraph class
+    def AddBetterLinks(self) -> bool:
+        was_improved = False
+        new_link_added = False
+        self.p2Cont.clear()
+        for link_key, link in self.subgraph.network.links.items():
+            if link_key in self.subgraph.links:
                 continue
-            node_index = index + 1
-            origin_node = self.subgraph.nodes[self.originIndex]
-            node = self.subgraph.nodes[node_index]
+            elif self.IsReachable(link) and self.WorthAdding(link):
+                if self.AddLink(link, link_key):
+                    new_link_added = True
+                was_improved = True
+
+        if not was_improved:
+            new_link_added = self.AddFromP2()
+
+        return new_link_added
+
+    def IsReachable(self, link: Link) -> bool:
+        return self.subgraph.nodes[link.src] and self.subgraph.nodes[link.dest]
+
+    def WorthAdding(self, link: Link) -> bool:
+        link_cost = link.cost
+        src_node = self.subgraph.nodes[link.src]
+        dest_node = self.subgraph.nodes[link.dest]
+        if src_node.pi_max + link_cost < dest_node.pi_max:
+            self.p2Cont.append(link)
+            if link_cost + src_node.pi_min < dest_node.pi_min:
+                return True
+
+    def AddFromP2(self):
+        added = False
+        for link in self.p2Cont:
+            if self.AddLink(link):
+                added = True
+        return added
+
+    def AddLink(self, link: Link, link_key: str | None = None):
+        key = link_key if link_key else create_link_key(link.src, link.dest)
+        if key in self.subgraph.links:
+            return False
+        self.subgraph.links[key] = link
+        src_node_index = link.src
+        if src_node_index not in self.subgraph.nodes:
+            src_node = self.subgraph.network.nodes[src_node_index]
+            assert src_node
+            self.subgraph.nodes[src_node_index] = src_node
+        dest_node_index = link.dest
+        if dest_node_index not in self.subgraph.nodes:
+            dest_node = self.subgraph.network.nodes[dest_node_index]
+            assert src_node
+            self.subgraph.nodes[dest_node_index] = dest_node
+
+        return True
+
             while origin_node != node:
                 node.alpha_min.AddFlow(demand)
                 node = self.subgraph.nodes[node.alpha_min.src]
