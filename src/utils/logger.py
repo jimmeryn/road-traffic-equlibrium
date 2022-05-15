@@ -30,17 +30,27 @@ class Logger:
 
     @staticmethod
     def LogGraphNodes(nodes: Dict[int, Node]) -> None:
+        log_string = "{node_index}: max: {alpha_max} ({pi_max}), min: {alpha_min} ({pi_min})"
+        default_message_params = {
+            "node_index": -1,
+            "pi_max": -1,
+            "pi_min": -1,
+            "alpha_max": None,
+            "alpha_min": None,
+        }
+        print("node_index: max: alpha_max (pi_max), min: alpha_min (pi_min)")
         for node in nodes.values():
-            print(node.index)
-            print(f"pi_max: {node.pi_max}")
-            print(f"pi_min: {node.pi_min}")
+            message_params = default_message_params
+            message_params["node_index"] = node.index
+            message_params["pi_max"] = node.pi_max
+            message_params["pi_min"] = node.pi_min
             alpha_max = node.alpha_max
             alpha_min = node.alpha_min
             if alpha_max:
-                print(f"alpha_max: {node.alpha_max.src}_{node.alpha_max.dest}")
+                message_params["alpha_max"] = f"{node.alpha_max.src}_{node.alpha_max.dest}"
             if alpha_min:
-                print(f"alpha_min: {node.alpha_min.src}_{node.alpha_min.dest}")
-            print("\n")
+                message_params["alpha_min"] = f"{node.alpha_min.src}_{node.alpha_min.dest}"
+            print(log_string.format(**message_params))
 
     @staticmethod
     def LogMinPaths(nodes: Dict[int, Node], originIndex: int = 1):
@@ -75,10 +85,21 @@ class Logger:
     def TestSolution(solution, graph: Graph):
         print("Testing solution...")
         max_dif = 0
-        for link in solution.values:
-            link_key = create_link_key(link[0], link[1])
-            graph_link = graph.links[link_key]
-            diff = abs(graph_link.flow - link[2])
-            max_dif = max(max_dif, diff)
-            assert diff < 1, f"Expected link flow to be {link[2]}, got {graph_link.flow}."
+        error_message = "Expected link ({src}_{dest}) flow to be {flow_calc}, got {flow}."
+        try:
+            for link in solution.values:
+                link_key = create_link_key(link[0], link[1])
+                graph_link = graph.links[link_key]
+                diff = abs(graph_link.flow - link[2])
+                max_dif = max(max_dif, diff)
+                error_message_params = {
+                    "src": graph_link.src,
+                    "dest": graph_link.dest,
+                    "flow_calc": link[2],
+                    "flow": graph_link.flow,
+                }
+                assert diff < 1, error_message.format(**error_message_params)
+        except AssertionError as assertion_error:
+            print(f"Test failed. \n{assertion_error}")
+            return
         print(f"Test passed. Max difference: {max_dif}")
