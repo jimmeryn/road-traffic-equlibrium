@@ -44,7 +44,7 @@ class Bush:
         m_min = 1
         m_max = 1
         while ij_max.src != ij_min.src:
-            while ij_min.src < ij_max.src:
+            while self.subgraph.nodesOrder.index(ij_min.src) < self.subgraph.nodesOrder.index(ij_max.src):
                 ij_max = self.subgraph.nodes[ij_max.src].alpha_max
                 x_max = min(x_max, ij_max.flow)
 
@@ -52,7 +52,7 @@ class Bush:
                 c_der_max += ij_max.cost_der
                 m_max += 1
 
-            while ij_max.src < ij_min.src:
+            while self.subgraph.nodesOrder.index(ij_max.src) < self.subgraph.nodesOrder.index(ij_min.src):
                 ij_min = self.subgraph.nodes[ij_min.src].alpha_min
                 x_min = min(x_min, ij_min.flow)
 
