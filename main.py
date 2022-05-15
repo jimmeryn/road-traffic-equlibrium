@@ -3,7 +3,7 @@ from src.data.test import run_test
 from src.utils.user_input import UserInput
 
 MAX_ERROR = 0.01
-MAX_ITERATION_COUNT = 10
+MAX_ITERATION_COUNT = 1000
 
 
 def main():
