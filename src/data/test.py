@@ -45,8 +45,9 @@ def run_test(
             demands,
             max_error
         )
-    except (IndexError, ValueError):
-        print("Error during algorithm initialisation...")
+    except (IndexError, ValueError) as error:
+        print(f"Error during algorithm initialisation...\n{error}\n")
+        return
     print("Created algorithm.")
     print(f"Test started for {current_city}...")
     start_time = time()
@@ -55,7 +56,8 @@ def run_test(
         max_error,
         max_iteration_count
     ).Run()
-    Logger.TestSolution(solution, network)
-    Logger.CompareSolution(solution, network)
     print(f"Test end after {time() - start_time} sec.")
+
+    Logger.CompareSolution(solution, network)
+    Logger.TestSolution(solution, network)
     return
