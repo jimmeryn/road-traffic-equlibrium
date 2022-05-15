@@ -81,7 +81,7 @@ class Bush:
         [delta_x, delta_c] = self.GetDeltaXandC(
             x_min, x_max, c_min, c_max, c_der_min, c_der_max)
         iteration_count = 0
-        while exp_factor * delta_c > self.error:
+        while exp_factor * delta_c > self.error and iteration_count < 100:
             [
                 x_min,
                 c_min,
