@@ -1,5 +1,5 @@
 """ Logger """
-from typing import Dict
+from typing import Any, Dict, Literal
 
 from src.shared.graph import Graph
 from src.shared.link import Link
@@ -53,25 +53,35 @@ class Logger:
             print(log_string.format(**message_params))
 
     @staticmethod
-    def LogMinPaths(nodes: Dict[int, Node], originIndex: int = 1):
+    def LogPaths(
+        nodes: Dict[int, Node],
+        path_prop: Literal["min", "max"],
+        origin_index: int = 1
+    ) -> None:
+        path_prop_name = f"alpha_{path_prop}"
         for node in nodes.values():
-            print(f"NODE {node.index} min path")
             current_node = node
-            origin_node = nodes[originIndex]
+            origin_node = nodes[origin_index]
+            path = []
             while current_node.index != origin_node.index:
-                print(current_node.index)
-                if current_node.alpha_min is None:
+                path.append(current_node.index)
+                if current_node[path_prop_name] is None:
                     break
-                current_node = nodes[current_node.alpha_min.src]
+                path_link: Link = current_node[path_prop_name]
+                next_index = path_link.src
+                current_node = nodes[next_index]
+            path.append(origin_index)
+            print(f"{node.index}.NODE {path_prop} path: {path}")
+        print("\n")
 
     @staticmethod
-    def LogSolution(solution):
+    def LogSolution(solution: Any) -> None:
         print("Solution:")
         for link in solution.values:
             print(f"{int(link[0])}_{int(link[1])}: c({link[2]}) = {link[3]}")
 
     @staticmethod
-    def CompareSolution(solution, graph: Graph):
+    def CompareSolution(solution: Any, graph: Graph) -> None:
         print("Compare Solution:")
         print("source_target: c(calculated_flow | solution_flow) = calculated_cost | solution_cost")
         for link in solution.values:
@@ -82,7 +92,7 @@ class Logger:
             )
 
     @staticmethod
-    def TestSolution(solution, graph: Graph):
+    def TestSolution(solution: Any, graph: Graph) -> None:
         print("Testing solution...")
         max_dif = 0
         error_message = "Expected link ({src}_{dest}) flow to be {flow_calc}, got {flow}."
@@ -102,4 +112,13 @@ class Logger:
         except AssertionError as assertion_error:
             print(f"Test failed. \n{assertion_error}")
             return
-        print(f"Test passed. Max difference: {max_dif}")
+        print(
+            f"Test passed.\nMax difference compared to known solution: {max_dif}")
+
+    @staticmethod
+    def LogNodesDifference(nodes: Dict[int, Node]) -> None:
+        for node in nodes.values():
+            pi_max = node.pi_max
+            pi_min = node.pi_min
+            diff = pi_max - pi_min
+            print(f"{node.index}: {pi_max} - {pi_min} = {diff}")
