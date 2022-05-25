@@ -14,9 +14,9 @@ class Graph(ABC):
     """
 
     def __init__(self):
-        self.links: Dict[str, Link]
-        self.nodes: Dict[int, Node]
-        self.nodesOrder: List[int]
+        self.links: Dict[str, Link] = dict()
+        self.nodes: Dict[int, Node] = dict()
+        self.nodesOrder: List[int] = list()
 
     def GetMaxGap(self) -> float:
         gap = 0
@@ -89,7 +89,7 @@ class Graph(ABC):
 
                 # max distance
                 new_cost = src_node.pi_max + cij
-                if new_cost >= dest_node.pi_max:
+                if new_cost > dest_node.pi_max:
                     dest_node.pi_max = new_cost
                     dest_node.alpha_max = link
 
