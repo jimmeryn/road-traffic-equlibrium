@@ -12,6 +12,8 @@ class AlgorithmB(Algorithm):
     def __init__(self, nodes, links, demands, error: float) -> None:
         super().__init__(nodes, links)
         self.bushes = self.CreateBushes(demands, self.network, error)
+        self.error = error
+        self.demands = demands
 
     def CreateBushes(self, demands, network: Network, error: float) -> Dict[int, Bush]:
         bushes: Dict[int, Bush] = {}
@@ -38,10 +40,29 @@ class AlgorithmB(Algorithm):
             bush.RemoveUnusedLinks()
 
     def GetMaxGap(self):
-        for link in self.network.links.values():
-            link.ResetFlow()
+        gap = 0
+        for from_node, demands_array in enumerate(self.demands):
+            from_node_index = from_node + 1
+            if from_node_index not in self.bushes:
+                continue
+            bush = self.bushes[from_node_index]
+            for to_node, demand in enumerate(demands_array):
+                to_node_index = to_node + 1
+                if demand == 0:
+                    continue
+                node = bush.subgraph.nodes[to_node_index]
+                gap = max(gap, node.pi_max - node.pi_min)
+        return gap
+
+    def IsBushOptimal(self, bush: Bush) -> bool:
+        for key, node in bush.subgraph.nodes.items():
+            if abs(self.network.nodes[key].pi_min - node.pi_max) > self.error:
+                return False
+        return True
+
+    def GetNetwork(self):
         for bush in self.bushes.values():
-            for link_key, link in bush.subgraph.links.items():
-                self.network.links[link_key].AddFlow(link.flow)
-        self.network.BuildTrees()
-        return self.network.GetMaxGap()
+            for key, link in bush.subgraph.links.items():
+                self.network.links[key].AddFlow(link.flow)
+
+        return self.network
