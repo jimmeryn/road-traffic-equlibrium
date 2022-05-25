@@ -6,6 +6,7 @@ from src.shared.graph import Graph
 from src.shared.link import Link
 from src.shared.network import Network
 from src.shared.node import Node
+from src.utils.link_utils import create_link_key
 
 
 class BushGraph(Graph):
@@ -19,6 +20,8 @@ class BushGraph(Graph):
         self.nodes = deepcopy(nodes)
         self.links = deepcopy(links)
         self.nodesOrder = self.GetTopoSortedNodesIndexes(originIndex)
+        self.p2Cont = []
+
         self.BuildMinTree(originIndex)
         self.ApplyInitialDemands(demands)
         self.BuildTrees(originIndex)
@@ -59,3 +62,56 @@ class BushGraph(Graph):
         for link_key, link in self.links.copy().items():
             if link.flow <= 0 and self.GetIncomingLinks(link.dest):
                 del self.links[link_key]
+
+    def AddBetterLinks(self) -> bool:
+        was_improved = False
+        new_link_added = False
+        self.p2Cont.clear()
+        for link_key, link in self.network.links.items():
+            if link_key in self.links:
+                continue
+            elif self.IsReachable(link) and self.WorthAdding(link):
+                if self.AddLink(link, link_key):
+                    new_link_added = True
+                was_improved = True
+
+        if not was_improved:
+            new_link_added = self.AddFromP2()
+
+        return new_link_added
+
+    def IsReachable(self, link: Link) -> bool:
+        return link.src in self.nodes and link.dest in self.nodes
+
+    def WorthAdding(self, link: Link) -> bool:
+        src_node = self.nodes[link.src]
+        dest_node = self.nodes[link.dest]
+        if src_node.pi_max + link.cost < dest_node.pi_max:
+            self.p2Cont.append(link)
+            if src_node.pi_min + link.cost < dest_node.pi_min:
+                return True
+
+    def AddFromP2(self):
+        added = False
+        for link in self.p2Cont:
+            if self.AddLink(link):
+                added = True
+        return added
+
+    def AddLink(self, link: Link, link_key: str | None = None):
+        key = link_key if link_key else create_link_key(link.src, link.dest)
+        if key in self.links:
+            return False
+        self.links[key] = link
+        src_node_index = link.src
+        if src_node_index not in self.nodes:
+            src_node = self.network.nodes[src_node_index]
+            assert src_node
+            self.nodes[src_node_index] = src_node
+        dest_node_index = link.dest
+        if dest_node_index not in self.nodes:
+            dest_node = self.network.nodes[dest_node_index]
+            assert src_node
+            self.nodes[dest_node_index] = dest_node
+
+        return True
