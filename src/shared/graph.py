@@ -36,63 +36,6 @@ class Graph(ABC):
             )
         )
 
-    def TopogologicalSortUtil(self, node_index: int, visited: Dict[int, bool], stack: List[int]) -> None:
-        visited[node_index] = True
-        for neighbor_index in self.GetNeighbors(node_index):
-            if neighbor_index not in visited:
-                self.TopogologicalSortUtil(neighbor_index, visited, stack)
-
-        stack.insert(0, node_index)
-
-    def GetTopoSortedNodesIndexes(self, node_index: int | None = None) -> List[int]:
-        ordered_nodes = []
-        visited = {}
-        if node_index is not None:
-            if node_index == 2:
-                pass
-            self.TopogologicalSortUtil(node_index, visited, ordered_nodes)
-        else:
-            for node_index in list(self.nodes):
-                if node_index not in visited:
-                    self.TopogologicalSortUtil(
-                        node_index,
-                        visited,
-                        ordered_nodes
-                    )
-
-        return ordered_nodes
-
-    def UpdateTopoSort(self, node_index: int | None = None):
-        self.nodesOrder = self.GetTopoSortedNodesIndexes(node_index)
-
-    def BuildTrees(self, origin_index: int = 1) -> None:
-        for node in self.nodes.values():
-            node.pi_max = 0
-            node.pi_min = math.inf
-            node.alpha_max = None
-            node.alpha_min = None
-
-        self.nodes[origin_index].pi_min = 0
-
-        for node_index in self.nodesOrder:
-            links = self.GetIncomingLinks(node_index)
-            dest_node = self.nodes[node_index]
-            for link in links:
-                src_node = self.nodes[link.src]
-                cij = link.cost
-
-                # min distance
-                new_cost = src_node.pi_min + cij
-                if new_cost < dest_node.pi_min:
-                    dest_node.pi_min = new_cost
-                    dest_node.alpha_min = link
-
-                # max distance
-                new_cost = src_node.pi_max + cij
-                if new_cost > dest_node.pi_max:
-                    dest_node.pi_max = new_cost
-                    dest_node.alpha_max = link
-
     def GetLink(self, from_node: int, to_node: int) -> (Link | None):
         return self.links.get(create_link_key(from_node, to_node))
 

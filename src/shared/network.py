@@ -16,7 +16,6 @@ class Network(Graph):
         super().__init__()
         self.links = self.CreateLinksDict(links)
         self.nodes = self.CreateNodesDict(nodes)
-        self.nodesOrder = self.GetTopoSortedNodesIndexes()
         self.n: int = int(nodes[-1][0])
 
     def CreateLinksDict(self, links) -> Dict[str, Link]:
@@ -34,12 +33,3 @@ class Network(Graph):
                 Node(node[0])
             ), nodes)
         )
-
-    def SetInitialFlows(self, demands) -> None:
-        for from_node, demands_array in enumerate(demands):
-            for to_node, demand in enumerate(demands_array):
-                if demand != 0:
-                    link = self.nodes[to_node + 1].alpha_min
-                    while link is not None and link.src == from_node + 1:
-                        link.AddFlow(demand)
-                        link = self.nodes[link.src].alpha_min

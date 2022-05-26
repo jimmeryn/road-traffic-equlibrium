@@ -115,3 +115,55 @@ class BushGraph(Graph):
             self.nodes[dest_node_index] = dest_node
 
         return True
+
+    def TopogologicalSortUtil(self, node_index: int, visited: Dict[int, bool], stack: List[int]) -> None:
+        visited[node_index] = True
+        for neighbor_index in self.GetNeighbors(node_index):
+            if neighbor_index not in visited:
+                self.TopogologicalSortUtil(neighbor_index, visited, stack)
+
+        stack.insert(0, node_index)
+
+    def GetTopoSortedNodesIndexes(self) -> List[int]:
+        ordered_nodes = []
+        visited = {}
+        for node_index in list(self.nodes):
+            if node_index not in visited:
+                self.TopogologicalSortUtil(
+                    node_index,
+                    visited,
+                    ordered_nodes
+                )
+
+        return ordered_nodes
+
+    def UpdateTopoSort(self):
+        self.nodesOrder = self.GetTopoSortedNodesIndexes()
+
+    def BuildTrees(self) -> None:
+        for node in self.nodes.values():
+            node.pi_max = 0
+            node.pi_min = math.inf
+            node.alpha_max = None
+            node.alpha_min = None
+
+        self.nodes[self.originIndex].pi_min = 0
+
+        for node_index in self.nodesOrder:
+            incoming_links = self.GetIncomingLinks(node_index)
+            dest_node = self.nodes[node_index]
+            for link in incoming_links:
+                src_node = self.nodes[link.src]
+                cij = link.cost
+
+                # min distance
+                new_cost = src_node.pi_min + cij
+                if new_cost < dest_node.pi_min:
+                    dest_node.pi_min = new_cost
+                    dest_node.alpha_min = link
+
+                # max distance
+                new_cost = src_node.pi_max + cij
+                if new_cost > dest_node.pi_max:
+                    dest_node.pi_max = new_cost
+                    dest_node.alpha_max = link
