@@ -1,6 +1,7 @@
 """ BushGraph """
+import math
 from copy import deepcopy
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 from src.shared.graph import Graph
 from src.shared.link import Link
@@ -19,12 +20,12 @@ class BushGraph(Graph):
         (nodes, links) = self.GetReachableNodesAndLinks()
         self.nodes = deepcopy(nodes)
         self.links = deepcopy(links)
-        self.nodesOrder = self.GetTopoSortedNodesIndexes(originIndex)
+        self.nodesOrder = self.GetTopoSortedNodesIndexes()
         self.p2Cont = []
 
         self.BuildMinTree(originIndex)
         self.ApplyInitialDemands(demands)
-        self.BuildTrees(originIndex)
+        self.BuildTrees()
 
     def GetReachableNodesAndLinks(self) -> Tuple[Dict[int, Node], Dict[str, Link]]:
         network_copy = deepcopy(self.network)
@@ -34,7 +35,7 @@ class BushGraph(Graph):
         for key, link in network_copy.links.items():
             src_node_cost = network_copy.nodes[link.src].pi_min
             dest_node_cost = network_copy.nodes[link.dest].pi_min
-            if dest_node_cost > src_node_cost:
+            if dest_node_cost > src_node_cost and key not in links:
                 links[key] = link
 
         nodes: Dict[int, Node] = dict()
@@ -70,7 +71,7 @@ class BushGraph(Graph):
         for link_key, link in self.network.links.items():
             if link_key in self.links:
                 continue
-            elif self.IsReachable(link) and self.WorthAdding(link):
+            if self.IsReachable(link) and self.WorthAdding(link):
                 if self.AddLink(link, link_key):
                     new_link_added = True
                 was_improved = True

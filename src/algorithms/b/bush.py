@@ -17,10 +17,10 @@ class Bush:
         self.m = len(self.subgraph.nodes) - 1
 
     def UpdateTopoSort(self):
-        self.subgraph.UpdateTopoSort(self.originIndex)
+        self.subgraph.UpdateTopoSort()
 
     def BuildTrees(self):
-        self.subgraph.BuildTrees(self.originIndex)
+        self.subgraph.BuildTrees()
 
     def RemoveUnusedLinks(self) -> None:
         self.subgraph.RemoveEmptyLinks()
