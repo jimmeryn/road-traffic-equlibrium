@@ -1,7 +1,7 @@
 """Link"""
-
-
 import math
+
+from src.utils.link_utils import create_link_key
 
 
 class Link:
@@ -22,6 +22,7 @@ class Link:
     ):
         self.src = int(init_node)
         self.dest = int(term_node)
+        self.index = create_link_key(self.src, self.dest)
         self.fft = free_flow_time
         self.b = b
         self.k = capacity
