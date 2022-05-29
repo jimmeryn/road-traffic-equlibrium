@@ -5,7 +5,6 @@ from typing import Dict, List
 
 from src.shared.link import Link
 from src.shared.node import Node
-from src.utils.link_utils import create_link_key
 
 
 class Graph(ABC):
