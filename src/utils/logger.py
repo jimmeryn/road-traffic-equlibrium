@@ -87,9 +87,10 @@ class Logger:
         for link in solution.values:
             link_key = f"{int(link[0])}_{int(link[1])}"
             graph_link = graph.links[link_key]
-            print(
-                f"{link_key}: c({graph_link.flow} | {link[2]}) = {graph_link.cost} | {link[3]}"
-            )
+            if abs(graph_link.flow - link[2]) > 1:
+                print(
+                    f"{link_key}: c({graph_link.flow} | {link[2]}) = {graph_link.cost} | {link[3]}"
+                )
 
     @staticmethod
     def TestSolution(solution: Any, graph: Graph) -> None:
