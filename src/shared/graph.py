@@ -36,9 +36,6 @@ class Graph(ABC):
             )
         )
 
-    def GetLink(self, from_node: int, to_node: int) -> (Link | None):
-        return self.links.get(create_link_key(from_node, to_node))
-
     def GetIncomingLinks(self, node_index: int) -> List[Link]:
         links = []
         for link in self.links.values():
