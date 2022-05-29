@@ -19,16 +19,14 @@ class AlgorithmB(Algorithm):
         bushes: Dict[int, Bush] = {}
         for from_node, demands_array in enumerate(demands):
             from_node_index = from_node + 1
-            for to_node, demand in enumerate(demands_array):
-                _to_node_index = to_node + 1
-                if demand == 0 or from_node_index in bushes:
-                    continue
-                bushes[from_node_index] = Bush(
-                    from_node_index,
-                    network,
-                    demands_array,
-                    error
-                )
+            if from_node_index in bushes or demands_array.max() == 0:
+                continue
+            bushes[from_node_index] = Bush(
+                from_node_index,
+                network,
+                demands_array,
+                error
+            )
 
         return bushes
 
