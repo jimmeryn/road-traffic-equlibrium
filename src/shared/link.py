@@ -1,6 +1,7 @@
 """Link"""
 import math
 
+from src.shared.consts import ZERO_FLOW
 from src.utils.link_utils import create_link_key
 
 
@@ -46,6 +47,8 @@ class Link:
     def AddFlow(self, delta_flow: float):
         # Add flow to the link and update cost and cost derivative
         self.flow += delta_flow
+        if self.flow <= ZERO_FLOW:
+            self.flow = 0.0
         self.cost = self.CalculateCost()
         self.cost_der = self.CalculateCostDerivative()
 
