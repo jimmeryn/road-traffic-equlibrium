@@ -53,14 +53,19 @@ class AlgorithmB(Algorithm):
         return gap
 
     def IsBushOptimal(self, bush: Bush) -> bool:
+        self.ClearNetwork()
+        self.ApplyFlowsFromBushes()
+        self.network.BuildMinTree()
         for key, node in bush.subgraph.nodes.items():
             if abs(self.network.nodes[key].pi_min - node.pi_max) > self.error:
                 return False
         return True
 
-    def GetNetwork(self):
+    def ClearNetwork(self):
+        for link in self.network.links.values():
+            link.ResetFlow()
+
+    def ApplyFlowsFromBushes(self):
         for bush in self.bushes.values():
             for key, link in bush.subgraph.links.items():
                 self.network.links[key].AddFlow(link.flow)
-
-        return self.network

@@ -1,13 +1,12 @@
 """ BushGraph """
 import math
-from copy import deepcopy
 from typing import Dict, List, Tuple
 
+from src.shared.consts import ZERO_FLOW
 from src.shared.graph import Graph
 from src.shared.link import Link
 from src.shared.network import Network
 from src.shared.node import Node
-from src.utils.link_utils import create_link_key
 
 
 class BushGraph(Graph):
@@ -17,51 +16,55 @@ class BushGraph(Graph):
         super().__init__()
         self.network = network
         self.originIndex = originIndex
+        self.demands = demands
+        self.bush_flow = self.GetBushFlowDict()
         (nodes, links) = self.GetReachableNodesAndLinks()
-        self.nodes = deepcopy(nodes)
-        self.links = deepcopy(links)
+        self.nodes = nodes
+        self.links = links
         self.nodesOrder = self.GetTopoSortedNodesIndexes()
-        self.p2Cont = []
-
-        self.BuildMinTree(originIndex)
-        self.ApplyInitialDemands(demands)
+        self.p2Cont: List[Link] = []
         self.BuildTrees()
 
     def GetReachableNodesAndLinks(self) -> Tuple[Dict[int, Node], Dict[str, Link]]:
-        network_copy = deepcopy(self.network)
-        network_copy.BuildMinTree(self.originIndex)
-
+        self.network.BuildMinTree(self.originIndex)
         links: Dict[str, Link] = dict()
-        for key, link in network_copy.links.items():
-            src_node_cost = network_copy.nodes[link.src].pi_min
-            dest_node_cost = network_copy.nodes[link.dest].pi_min
-            if dest_node_cost > src_node_cost and key not in links:
-                links[key] = link
-
         nodes: Dict[int, Node] = dict()
-        for link in links.values():
-            src = link.src
-            dest = link.dest
-            if src not in nodes:
-                nodes[src] = network_copy.nodes[src]
-            if dest not in nodes:
-                nodes[dest] = network_copy.nodes[dest]
+        for key, demand in enumerate(self.demands):
+            node_key = key + 1
+            link = self.network.nodes[node_key].alpha_min
+            while link is not None:
+                link.AddFlow(demand)
+                self.AddFlowToBushFlow(link.index, demand)
+                links[link.index] = link
+                link = self.network.nodes[link.src].alpha_min
+
+        # for key, link in links.items():
+        #     src_node = self.network.nodes[link.src]
+        #     dest_node = self.network.nodes[link.dest]
+        #     if key in nodes:
+        #         continue
+        #     nodes[link.src] = src_node
+        #     nodes[link.dest] = dest_node
+        nodes = self.network.nodes
 
         return (nodes, links)
 
-    def ApplyInitialDemands(self, demands):
-        origin_node_index = self.nodes[self.originIndex].index
-        for index, demand in enumerate(demands):
-            if demand == 0:
-                continue
-            node = self.nodes[index + 1]
-            while origin_node_index != node.index:
-                node.alpha_min.AddFlow(demand)
-                node = self.nodes[node.alpha_min.src]
+    def GetBushFlowDict(self):
+        return dict(
+            map(
+                lambda link: (link.index, 0.0),
+                self.network.links.values()
+            )
+        )
+
+    def AddFlowToBushFlow(self, link_index: str, flow: float):
+        self.bush_flow[link_index] += flow
+        if self.bush_flow[link_index] <= ZERO_FLOW:
+            self.bush_flow[link_index] = 0.0
 
     def RemoveEmptyLinks(self):
         for link_key, link in self.links.copy().items():
-            if link.flow <= 0 and self.GetIncomingLinks(link.dest):
+            if self.bush_flow[link_key] <= ZERO_FLOW and len(self.GetIncomingLinks(link.dest)) > 1:
                 del self.links[link_key]
 
     def AddBetterLinks(self) -> bool:
@@ -72,7 +75,7 @@ class BushGraph(Graph):
             if link_key in self.links:
                 continue
             if self.IsReachable(link) and self.WorthAdding(link):
-                if self.AddLink(link, link_key):
+                if self.AddLink(link):
                     new_link_added = True
                 was_improved = True
 
@@ -92,6 +95,8 @@ class BushGraph(Graph):
             if src_node.pi_min + link.cost < dest_node.pi_min:
                 return True
 
+        return False
+
     def AddFromP2(self):
         added = False
         for link in self.p2Cont:
@@ -99,23 +104,28 @@ class BushGraph(Graph):
                 added = True
         return added
 
-    def AddLink(self, link: Link, link_key: str | None = None):
-        key = link_key if link_key else create_link_key(link.src, link.dest)
-        if key in self.links:
+    def AddLink(self, link: Link):
+        if link.index in self.links:
             return False
-        self.links[key] = link
         src_node_index = link.src
-        if src_node_index not in self.nodes:
-            src_node = self.network.nodes[src_node_index]
-            assert src_node
-            self.nodes[src_node_index] = src_node
         dest_node_index = link.dest
+        # src_node = self.nodes[src_node_index]
+        # dest_node = self.nodes[dest_node_index]
+        # demand_to = self.GetDemand(dest_node_index)
+        self.links[link.index] = link
+
+        if src_node_index not in self.nodes:
+            new_node = self.network.nodes[src_node_index]
+            self.nodes[src_node_index] = new_node
+
         if dest_node_index not in self.nodes:
-            dest_node = self.network.nodes[dest_node_index]
-            assert src_node
-            self.nodes[dest_node_index] = dest_node
+            new_node = self.network.nodes[dest_node_index]
+            self.nodes[dest_node_index] = new_node
 
         return True
+
+    def GetDemand(self, index: int) -> float:
+        return self.demands[index - 1] if self.demands.size > index - 1 else 0.0
 
     def TopogologicalSortUtil(self, node_index: int, visited: Dict[int, bool], stack: List[int]) -> None:
         visited[node_index] = True

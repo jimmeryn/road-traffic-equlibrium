@@ -1,10 +1,11 @@
 """ Bush Class"""
+import math
 from typing import List, Literal, Tuple
 
 from src.algorithms.b.bush_graph import BushGraph
+from src.shared.consts import DIR_TOLERANCE, MULTI_STEP, ZERO_FLOW
 from src.shared.link import Link
 from src.shared.network import Network
-from src.shared.node import Node
 
 
 class Bush:
@@ -27,29 +28,138 @@ class Bush:
 
     def Improve(self):
         self.BuildTrees()
-        self.subgraph.network.BuildMinTree()
-        added_better_links = self.subgraph.AddBetterLinks()
-        if added_better_links:
+        if self.subgraph.AddBetterLinks():
             self.UpdateTopoSort()
             self.BuildTrees()
 
     def Equilibrate(self) -> None:
         for node_index in reversed(self.subgraph.nodesOrder):
-            node = self.subgraph.nodes[node_index]
-            if node.alpha_max and node.pi_max - node.pi_min > self.error:
-                self.EqualizeCost(node_index, node)
+            self.EqualizeCostNew(node_index)
+
+    def EqualizeCostNew(
+        self,
+        j: int,
+    ) -> None:
+        node = self.subgraph.nodes[j]
+        if (
+            node.alpha_max is None or
+            node.alpha_min is None or
+            node.pi_max - node.pi_min <= DIR_TOLERANCE
+        ):
+            return
+        min_link = node.alpha_min
+        max_link = node.alpha_max
+        if min_link is None or max_link is None:
+            return
+        min_path: List[Link] = []
+        max_path: List[Link] = []
+        min_dist = 0
+        max_dist = 0
+        min_node = min_link.src
+        max_node = max_link.src
+        if min_node != max_node:
+            min_path.append(min_link)
+            min_dist += min_link.cost
+            max_path.append(max_link)
+            max_dist += max_link.cost
+        elif min_link.index != max_link.index:
+            min_path.append(min_link)
+            min_dist += min_link.cost
+            max_path.append(max_link)
+            max_dist += max_link.cost
+
+        while True:
+            if min_node == max_node:
+                break
+            node_min = self.subgraph.nodes[min_node]
+            node_max = self.subgraph.nodes[max_node]
+            if self.subgraph.nodesOrder.index(node_min.index) > self.subgraph.nodesOrder.index(node_max.index):
+                min_link = node_min.alpha_min
+                if min_link is not None:
+                    min_node = min_link.src
+                    min_path.append(min_link)
+                    min_dist += min_link.cost
+            else:
+                max_link = node_max.alpha_max
+                if max_link is not None:
+                    max_node = max_link.src
+                    max_path.append(max_link)
+                    max_dist += max_link.cost
+
+        if not min_path or not max_path or max_dist - min_dist <= DIR_TOLERANCE:
+            return
+
+        min_path_distance = min_dist
+        max_path_distance = max_dist
+
+        while True:
+            delta_x = self.CalculateFlowStep(
+                max_path,
+                max_path_distance,
+                min_path,
+                min_path_distance,
+            )
+            if delta_x <= ZERO_FLOW:
+                break
+
+            min_dist = 0
+            for link in min_path:
+                link.AddFlow(delta_x)
+                self.subgraph.AddFlowToBushFlow(link.index, delta_x)
+                min_dist += link.cost
+
+            max_dist = 0
+            for link in max_path:
+                link.AddFlow(-delta_x)
+                self.subgraph.AddFlowToBushFlow(link.index, -delta_x)
+                max_dist += link.cost
+
+            if not MULTI_STEP or max_dist <= min_dist:
+                break
+
+            min_path_distance = min_dist
+            max_path_distance = max_dist
+
+    def CalculateFlowStep(
+        self,
+        max_path: List[Link],
+        max_path_distance: List[float],
+        min_path: List[Link],
+        min_path_distance: List[float]
+    ):
+        delta_x = 0
+        distance_diff = max_path_distance - min_path_distance
+        der_distance_diff = 0
+        if distance_diff > DIR_TOLERANCE:
+            for link in min_path:
+                der_distance_diff += link.cost_der
+            min_move = math.inf
+            o_flow = 0
+            for link in max_path:
+                der_distance_diff += link.cost_der
+                o_flow = self.subgraph.bush_flow[link.index]
+                min_move = min(o_flow, min_move)
+            delta_x = min(min_move, distance_diff / der_distance_diff)
+        return delta_x
 
     def EqualizeCost(
         self,
         j: int,
-        node: Node
     ) -> None:
+        node = self.subgraph.nodes[j]
+        if (
+            node.alpha_max is None or
+            node.alpha_min is None or
+            node.pi_max - node.pi_min <= self.error
+        ):
+            return
+
         while node.pi_max - node.pi_min > self.error:
             [k, min_node_idx, max_node_idx, *params] = self.GetBranchNode(j)
             if k <= 0:
-                break
+                return
             delta_x = self.GetDeltaX(*params)
-            if delta_x <= 1e-12:
+            if delta_x <= ZERO_FLOW:
                 return
             self.UpdatePathFlow(delta_x, min_node_idx, 'min')
             self.UpdatePathFlow(-delta_x, max_node_idx, 'max')
