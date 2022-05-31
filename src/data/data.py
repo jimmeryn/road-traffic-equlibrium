@@ -104,7 +104,7 @@ def import_matrix(city_name: str):
 def get_solution_for_city(city_name: str):
     root = get_root()
     solutionfile = os.path.join(root, city_name, f'{city_name}_flow.tntp')
-    solution = pd.read_csv(solutionfile, skiprows=0, sep='\s+')
+    solution = pd.read_csv(solutionfile, skiprows=0, delimiter=r"\s+")
     trimmed = [s.strip().lower() for s in solution.columns]
     solution.columns = trimmed
     return solution
