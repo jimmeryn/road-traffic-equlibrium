@@ -44,6 +44,7 @@ class AlgorithmB(Algorithm):
             if from_node_index not in self.bushes:
                 continue
             bush = self.bushes[from_node_index]
+            bush.BuildTrees()
             for to_node, demand in enumerate(demands_array):
                 to_node_index = to_node + 1
                 if demand == 0:
@@ -51,21 +52,3 @@ class AlgorithmB(Algorithm):
                 node = bush.subgraph.nodes[to_node_index]
                 gap = max(gap, node.pi_max - node.pi_min)
         return gap
-
-    def IsBushOptimal(self, bush: Bush) -> bool:
-        self.ClearNetwork()
-        self.ApplyFlowsFromBushes()
-        self.network.BuildMinTree()
-        for key, node in bush.subgraph.nodes.items():
-            if abs(self.network.nodes[key].pi_min - node.pi_max) > self.error:
-                return False
-        return True
-
-    def ClearNetwork(self):
-        for link in self.network.links.values():
-            link.ResetFlow()
-
-    def ApplyFlowsFromBushes(self):
-        for bush in self.bushes.values():
-            for key, link in bush.subgraph.links.items():
-                self.network.links[key].AddFlow(link.flow)
