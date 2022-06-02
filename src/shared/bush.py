@@ -2,7 +2,7 @@
 import math
 from typing import List, Literal, Tuple
 
-from src.algorithms.b.bush_graph import BushGraph
+from src.shared.bush_graph import BushGraph
 from src.shared.consts import DIR_TOLERANCE, MULTI_STEP, ZERO_FLOW
 from src.shared.link import Link
 from src.shared.network import Network

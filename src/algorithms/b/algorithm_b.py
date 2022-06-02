@@ -2,7 +2,7 @@
 from typing import Dict
 
 from src.algorithms.algorithm import Algorithm
-from src.algorithms.b.bush import Bush
+from src.shared.bush import Bush
 from src.shared.network import Network
 
 
