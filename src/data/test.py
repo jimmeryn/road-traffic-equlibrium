@@ -3,7 +3,7 @@ import os
 from time import time
 
 import src.data.data as data
-from root import ROOT_DIR
+from results.root import ROOT_DIR
 from src.algorithms.algorithm import Algorithm
 from src.algorithms.b.algorithm_b import AlgorithmB
 from src.algorithms.calculate_equilibrium import CalculateEquilibrium
@@ -32,7 +32,8 @@ def run_test(
     city_index: int,
     algorithmIndex: int,
     max_error: float | int,
-    max_iteration_count: int
+    max_iteration_count: int,
+    compare_solution: bool = False
 ):
     try:
         current_city = DATA_LIST[city_index]
@@ -57,19 +58,27 @@ def run_test(
         return
     print("Created algorithm.")
     print(f"Test started for {current_city}...")
-    file_name = f"results-{algorithm.__class__.__name__}-{current_city}.txt"
-    full_file_name = os.path.join(ROOT_DIR, file_name)
-    with open(full_file_name, 'w+', encoding="utf-8") as file:
+    file_name = f"results-{algorithm.__class__.__name__}-{current_city}.csv"
+    full_result_file_name = os.path.join(ROOT_DIR, file_name)
+    metadata_file_name = f"data-{algorithm.__class__.__name__}-{current_city}.csv"
+    full_metadata_file_name = os.path.join(ROOT_DIR, metadata_file_name)
+    with (
+        open(full_result_file_name, 'w+', encoding="utf-8") as file,
+        open(full_metadata_file_name, 'w+', encoding="utf-8") as data_file
+    ):
         start_time = time()
         network = CalculateEquilibrium(
             algorithm,
             max_error,
             max_iteration_count
-        ).Run(file)
-        file.write(f"Time(sec),{time() - start_time}\n")
+        ).Run(file, data_file)
+        data_file.write(f"Time(sec),{time() - start_time}\n")
 
-    Logger.CompareSolution(solution, network)
-    Logger.TestSolution(solution, network)
-    print(f"The results are available at: {full_file_name}")
+    if compare_solution:
+        Logger.CompareSolution(solution, network)
+        Logger.TestSolution(solution, network)
+
+    print(f"The results are available at: {full_result_file_name}")
+    print(f"The metadata is available at: {full_metadata_file_name}")
 
     return

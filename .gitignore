@@ -129,4 +129,5 @@ dmypy.json
 .idea
 
 # Algorithm result files
-results*.txt
+results/result*
+results/data*
