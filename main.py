@@ -1,16 +1,8 @@
 """ Main Program """
-import os
-
-from dotenv import load_dotenv
-
 from src.data.test import run_test
-from src.shared.consts import MAX_ERROR, MAX_ITERATION_COUNT
+from src.shared.consts import (ALGORITHM, EXAMPLE_NUMBER, MAX_ERROR,
+                               MAX_ITERATION_COUNT)
 from src.utils.user_input import UserInput
-
-load_dotenv()
-
-ALGORITHM = os.getenv('ALGORITHM')
-EXAMPLE_NUMBER = os.getenv('EXAMPLE_NUMBER')
 
 
 def main():
