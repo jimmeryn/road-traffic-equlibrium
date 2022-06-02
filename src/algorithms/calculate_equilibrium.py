@@ -1,5 +1,6 @@
 """ Calculate Equilibrium Class """
 import math
+from io import TextIOWrapper
 
 from src.algorithms.algorithm import Algorithm
 
@@ -17,19 +18,20 @@ class CalculateEquilibrium:
         self.e = e
         self.max_iteration_count = max_iteration_count
 
-    def Run(self) -> None:
+    def Run(self, file: TextIOWrapper) -> None:
         iteration_count = 0
         delta_c_max = math.inf
         while (
             delta_c_max > self.e and
             iteration_count < self.max_iteration_count
         ):
-            print(f"Iteration: {iteration_count}, Gap: {delta_c_max}")
+            file.write(f"{iteration_count},{delta_c_max}\n")
             iteration_count += 1
             self.algorithm.Iteration()
             delta_c_max = self.algorithm.GetMaxGap()
 
-        print(f"Algorithm finished after {iteration_count} iterations.")
-        print(f"Calculated max cost difference = {delta_c_max}.")
+        file.write(
+            f"Iterations,{iteration_count}\n")
+        file.write(f"Max_cost_difference,{delta_c_max}\n")
 
         return self.algorithm.network

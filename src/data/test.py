@@ -1,24 +1,30 @@
 """ Testing funtion """
+import os
 from time import time
 
 import src.data.data as data
+from root import ROOT_DIR
+from src.algorithms.algorithm import Algorithm
 from src.algorithms.b.algorithm_b import AlgorithmB
 from src.algorithms.calculate_equilibrium import CalculateEquilibrium
+from src.algorithms.oba.oba import OBA
+from src.algorithms.tapas.tapas import TAPAS
 from src.utils.logger import Logger
-
-# from src.algorithms.oba.oba import OBA
-# from src.algorithms.tapas.tapas import TAPAS
 
 DATA_LIST = {
     1: 'FourNodes',
     2: 'Braess',
     3: 'NineNodes',
     4: 'SiouxFalls',
+    5: 'ChicagoSketch',
+    6: 'SiouxFalls2',
+    7: 'SiouxFalls21',
+    8: 'SiouxFalls3',
 }
 ALGORITHMS = {
     1: AlgorithmB,
-    # 2: TAPAS,
-    # 3: OBA,
+    2: TAPAS,
+    3: OBA,
 }
 
 
@@ -36,10 +42,11 @@ def run_test(
         print("Data imported.")
     except (IndexError, ValueError):
         print("Error during data importing...")
+        return
 
     print("Creating algorithm and data structures...")
     try:
-        algorithm = ALGORITHMS[algorithmIndex](
+        algorithm: Algorithm = ALGORITHMS[algorithmIndex](
             nodes.values.tolist(),
             network.values.tolist(),
             demands,
@@ -50,14 +57,19 @@ def run_test(
         return
     print("Created algorithm.")
     print(f"Test started for {current_city}...")
-    start_time = time()
-    network = CalculateEquilibrium(
-        algorithm,
-        max_error,
-        max_iteration_count
-    ).Run()
-    print(f"Test end after {time() - start_time} sec.")
+    file_name = f"results-{algorithm.__class__.__name__}-{current_city}.txt"
+    full_file_name = os.path.join(ROOT_DIR, file_name)
+    with open(full_file_name, 'w+', encoding="utf-8") as file:
+        start_time = time()
+        network = CalculateEquilibrium(
+            algorithm,
+            max_error,
+            max_iteration_count
+        ).Run(file)
+        file.write(f"Time(sec),{time() - start_time}\n")
 
     Logger.CompareSolution(solution, network)
     Logger.TestSolution(solution, network)
+    print(f"The results are available at: {full_file_name}")
+
     return

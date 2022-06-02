@@ -127,3 +127,6 @@ dmypy.json
 .vscode/
 .vs
 .idea
+
+# Algorithm result files
+results*.txt
