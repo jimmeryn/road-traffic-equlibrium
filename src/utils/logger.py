@@ -89,7 +89,7 @@ class Logger:
             graph_link = graph.links[link_key]
             if abs(graph_link.flow - link[2]) > 1:
                 print(
-                    f"{link_key}: c({graph_link.flow} | {link[2]}) = {graph_link.cost} | {link[3]}"
+                    f"{link_key}: {abs(graph_link.flow - link[2])} c({graph_link.flow} | {link[2]})"
                 )
 
     @staticmethod
