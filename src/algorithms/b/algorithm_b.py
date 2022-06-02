@@ -3,6 +3,7 @@ from typing import Dict
 
 from src.algorithms.algorithm import Algorithm
 from src.shared.bush import Bush
+from src.shared.consts import RECALCULATE_MAX_IN_GAP
 from src.shared.network import Network
 
 
@@ -44,7 +45,8 @@ class AlgorithmB(Algorithm):
             if from_node_index not in self.bushes:
                 continue
             bush = self.bushes[from_node_index]
-            bush.BuildTrees()
+            if RECALCULATE_MAX_IN_GAP:
+                bush.BuildTrees()
             for to_node, demand in enumerate(demands_array):
                 to_node_index = to_node + 1
                 if demand == 0:
