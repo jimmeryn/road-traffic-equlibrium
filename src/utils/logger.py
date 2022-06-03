@@ -1,4 +1,5 @@
 """ Logger """
+import logging
 from typing import Any, Dict, Literal
 
 from src.shared.graph import Graph
@@ -13,20 +14,20 @@ class Logger:
     @staticmethod
     def LogFlow(links: Dict[int, Link]) -> None:
         for key, link in links.items():
-            print(f"{key}: {link.flow}")
+            logging.debug("%s: %s", key, link.flow)
 
     @staticmethod
     def LogCosts(links: Dict[int, Link]) -> None:
         for key, link in links.items():
-            print(f"{key}: {link.cost}")
+            logging.debug("%s: %s", key, link.cost)
 
     @staticmethod
     def LogGraphLinks(links: Dict[int, Link]) -> None:
-        print("Links:")
-        print("source_target: c(flow) = cost")
+        logging.debug("Links:")
+        logging.debug("source_target: c(flow) = cost")
         for key, link in links.items():
-            print(f"{key}: c({link.flow}) = {link.cost}")
-        print("\n")
+            logging.debug("%s: c(%s) = %s", key, link.flow, link.cost)
+        logging.debug("\n")
 
     @staticmethod
     def LogGraphNodes(nodes: Dict[int, Node]) -> None:
@@ -38,7 +39,8 @@ class Logger:
             "alpha_max": None,
             "alpha_min": None,
         }
-        print("node_index: max: alpha_max (pi_max), min: alpha_min (pi_min)")
+        logging.debug(
+            "node_index: max: alpha_max (pi_max), min: alpha_min (pi_min)")
         for node in nodes.values():
             message_params = default_message_params
             message_params["node_index"] = node.index
@@ -50,7 +52,14 @@ class Logger:
                 message_params["alpha_max"] = f"{node.alpha_max.src}_{node.alpha_max.dest}"
             if alpha_min:
                 message_params["alpha_min"] = f"{node.alpha_min.src}_{node.alpha_min.dest}"
-            print(log_string.format(**message_params))
+            logging.debug(
+                log_string,
+                message_params["node_index"],
+                message_params["alpha_max"],
+                message_params["pi_max"],
+                message_params["alpha_min"],
+                message_params["pi_min"]
+            )
 
     @staticmethod
     def LogPaths(
@@ -71,30 +80,41 @@ class Logger:
                 next_index = path_link.src
                 current_node = nodes[next_index]
             path.append(origin_index)
-            print(f"{node.index}.NODE {path_prop} path: {path}")
-        print("\n")
+            logging.debug("%s.NODE %s path: %s", node.index, path_prop, path)
+        logging.debug("\n")
 
     @staticmethod
     def LogSolution(solution: Any) -> None:
-        print("Solution:")
+        logging.debug("Solution:")
         for link in solution.values:
-            print(f"{int(link[0])}_{int(link[1])}: c({link[2]}) = {link[3]}")
+            logging.debug(
+                "%s_%s: c(%s = %s)",
+                int(link[0]),
+                int(link[1]),
+                link[2],
+                link[3]
+            )
 
     @staticmethod
     def CompareSolution(solution: Any, graph: Graph) -> None:
-        print("Compare Solution:")
-        print("source_target: c(calculated_flow | solution_flow) = calculated_cost | solution_cost")
+        logging.debug("Compare Solution:")
+        logging.debug(
+            "source_target: c(calculated_flow | solution_flow) = calculated_cost | solution_cost")
         for link in solution.values:
             link_key = f"{int(link[0])}_{int(link[1])}"
             graph_link = graph.links[link_key]
             if abs(graph_link.flow - link[2]) > 1:
-                print(
-                    f"{link_key}: {abs(graph_link.flow - link[2])} c({graph_link.flow} | {link[2]})"
+                logging.debug(
+                    "%s: %s c(%s | %s)",
+                    link_key,
+                    abs(graph_link.flow - link[2]),
+                    graph_link.flow,
+                    link[2]
                 )
 
     @staticmethod
     def TestSolution(solution: Any, graph: Graph) -> None:
-        print("Testing solution...")
+        logging.debug("Testing solution...")
         max_dif = 0
         error_message = "Expected link ({src}_{dest}) flow to be {flow_calc}, got {flow}."
         try:
@@ -111,10 +131,12 @@ class Logger:
                 }
                 assert diff < 1, error_message.format(**error_message_params)
         except AssertionError as assertion_error:
-            print(f"Test failed. \n{assertion_error}")
+            logging.debug("Test failed. \n%s", assertion_error)
             return
-        print(
-            f"Test passed.\nMax difference compared to known solution: {max_dif}")
+        logging.debug(
+            "Test passed.\nMax difference compared to known solution: %s",
+            max_dif
+        )
 
     @staticmethod
     def LogNodesDifference(nodes: Dict[int, Node]) -> None:
@@ -122,4 +144,4 @@ class Logger:
             pi_max = node.pi_max
             pi_min = node.pi_min
             diff = pi_max - pi_min
-            print(f"{node.index}: {pi_max} - {pi_min} = {diff}")
+            logging.debug("%s: %s - %s = %s", node.index, pi_max, pi_min, diff)

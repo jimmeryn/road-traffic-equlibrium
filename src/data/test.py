@@ -1,6 +1,7 @@
 """ Testing funtion """
+import logging
 import os
-from time import time
+from time import perf_counter
 
 import src.data.data as data
 from results.root import ROOT_DIR
@@ -66,15 +67,17 @@ def run_test(
         open(full_result_file_name, 'w+', encoding="utf-8") as file,
         open(full_metadata_file_name, 'w+', encoding="utf-8") as data_file
     ):
-        start_time = time()
+        start_time = perf_counter()
         network = CalculateEquilibrium(
             algorithm,
             max_error,
             max_iteration_count
         ).Run(file, data_file)
-        data_file.write(f"Time(sec),{time() - start_time}\n")
+        end_time = perf_counter()
+        data_file.write(f"Time(sec),{end_time - start_time}\n")
 
     if compare_solution:
+        logging.basicConfig(level=logging.DEBUG)
         Logger.CompareSolution(solution, network)
         Logger.TestSolution(solution, network)
 

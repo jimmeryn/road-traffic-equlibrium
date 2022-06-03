@@ -1,7 +1,7 @@
 """ Main Program """
 from src.data.test import run_test
-from src.shared.consts import (ALGORITHM, EXAMPLE_NUMBER, MAX_ERROR,
-                               MAX_ITERATION_COUNT)
+from src.shared.consts import (ALGORITHM, COMPARE_SOLUTION, EXAMPLE_NUMBER,
+                               MAX_ERROR, MAX_ITERATION_COUNT)
 from src.utils.user_input import UserInput
 
 
@@ -24,7 +24,8 @@ def main():
             city_index,
             alg_index,
             MAX_ERROR,
-            MAX_ITERATION_COUNT
+            MAX_ITERATION_COUNT,
+            COMPARE_SOLUTION,
         )
         if ALGORITHM or input("Press Enter to continue or 0 to exit.\n") == '0':
             break

@@ -33,6 +33,11 @@ Running MyPy;
 mypy main.py
 ```
 
+Profiler:
+```
+snakeviz .\tmp\tmp.prof
+```
+
 ### Save installed packages:
 
 To save the packages installed in the project run:
