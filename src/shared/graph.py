@@ -1,6 +1,7 @@
 """ Graph Class """
 import math
 from abc import ABC
+from collections import defaultdict
 from typing import Dict, List
 
 from src.shared.link import Link
@@ -24,16 +25,12 @@ class Graph(ABC):
                 gap = max(node.pi_max - node.pi_min, gap)
         return gap
 
-    def GetNeighbors(self, index: int) -> List[int]:
-        return list(
-            map(
-                lambda link: link.dest,
-                filter(
-                    lambda link: link.src == index,
-                    self.links.values()
-                )
-            )
-        )
+    def GetAllNeighbors(self):
+        all_neighbors = defaultdict(list)
+        for link in self.links:
+            [src, dest] = link.split('_')
+            all_neighbors[int(src)].append(int(dest))
+        return all_neighbors
 
     def GetIncomingLinks(self, node_index: int) -> List[Link]:
         links = []
@@ -42,6 +39,27 @@ class Graph(ABC):
                 links.append(link)
 
         return links
+
+    def GetAllIncomingLinks(self) -> Dict[int, List[Link]]:
+        all_links = defaultdict(list)
+        for link in self.links.values():
+            all_links[link.dest].append(link)
+
+        return all_links
+
+    def GetAllIncomingLinksLength(self) -> Dict[int, int]:
+        all_links = defaultdict(int)
+        for link in self.links.values():
+            all_links[link.dest] += 1
+
+        return all_links
+
+    def GetAllOutcomingLinks(self) -> Dict[int, List[Link]]:
+        all_links = defaultdict(list)
+        for link in self.links.values():
+            all_links[link.src].append(link)
+
+        return all_links
 
     def GetOutcomingLinks(self, node_index: int) -> List[Link]:
         links = []
@@ -52,16 +70,17 @@ class Graph(ABC):
         return links
 
     def BuildMinTree(self, origin_index: int = 1):
-        unvisited_nodes = list(self.nodes.keys())
+        unvisited_nodes = [*self.nodes]
         for node in self.nodes.values():
             node.pi_min = math.inf
             node.alpha_min = None
 
         self.nodes[origin_index].pi_min = 0
+        outcoming_links_dict = self.GetAllOutcomingLinks()
 
         while unvisited_nodes:
             current_min_node = self.GetCurrentMinNode(unvisited_nodes)
-            outcoming_links = self.GetOutcomingLinks(current_min_node.index)
+            outcoming_links = outcoming_links_dict[current_min_node.index]
             for link in outcoming_links:
                 tentative_value = current_min_node.pi_min + link.cost
                 neighbour = self.nodes[link.dest]

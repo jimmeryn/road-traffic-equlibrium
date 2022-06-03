@@ -1,12 +1,13 @@
 """ BushGraph """
 import math
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 from src.shared.consts import ZERO_FLOW
 from src.shared.graph import Graph
 from src.shared.link import Link
 from src.shared.network import Network
 from src.shared.node import Node
+from src.utils.link_utils import create_link_key
 
 
 class BushGraph(Graph):
@@ -21,7 +22,7 @@ class BushGraph(Graph):
         (nodes, links) = self.GetReachableNodesAndLinks()
         self.nodes = nodes
         self.links = links
-        self.nodesOrder = self.GetTopoSortedNodesIndexes()
+        self.nodesOrder = self.TopoSort()
         self.p2Cont: List[Link] = []
         self.BuildTrees()
 
@@ -38,13 +39,6 @@ class BushGraph(Graph):
                 links[link.index] = link
                 link = self.network.nodes[link.src].alpha_min
 
-        # for key, link in links.items():
-        #     src_node = self.network.nodes[link.src]
-        #     dest_node = self.network.nodes[link.dest]
-        #     if key in nodes:
-        #         continue
-        #     nodes[link.src] = src_node
-        #     nodes[link.dest] = dest_node
         nodes = self.network.nodes
 
         return (nodes, links)
@@ -63,16 +57,22 @@ class BushGraph(Graph):
             self.bush_flow[link_index] = 0.0
 
     def RemoveEmptyLinks(self):
+        removed_link = False
+        incoming_links_dict = self.GetAllIncomingLinksLength()
         for link_key, link in self.links.copy().items():
-            if self.bush_flow[link_key] <= ZERO_FLOW and len(self.GetIncomingLinks(link.dest)) > 1:
+            if self.bush_flow[link_key] <= ZERO_FLOW and incoming_links_dict[link.dest] > 1:
                 del self.links[link_key]
+                incoming_links_dict[link.dest] -= 1
+                if not removed_link:
+                    removed_link = True
+        return removed_link
 
     def AddBetterLinks(self) -> bool:
         was_improved = False
         new_link_added = False
         self.p2Cont.clear()
         for link_key, link in self.network.links.items():
-            if link_key in self.links:
+            if link_key in self.links and create_link_key(link.dest, link.src) not in self.links:
                 continue
             if self.IsReachable(link) and self.WorthAdding(link):
                 if self.AddLink(link):
@@ -109,9 +109,6 @@ class BushGraph(Graph):
             return False
         src_node_index = link.src
         dest_node_index = link.dest
-        # src_node = self.nodes[src_node_index]
-        # dest_node = self.nodes[dest_node_index]
-        # demand_to = self.GetDemand(dest_node_index)
         self.links[link.index] = link
 
         if src_node_index not in self.nodes:
@@ -127,29 +124,26 @@ class BushGraph(Graph):
     def GetDemand(self, index: int) -> float:
         return self.demands[index - 1] if self.demands.size > index - 1 else 0.0
 
-    def TopogologicalSortUtil(self, node_index: int, visited: Dict[int, bool], stack: List[int]) -> None:
-        visited[node_index] = True
-        for neighbor_index in self.GetNeighbors(node_index):
-            if neighbor_index not in visited:
-                self.TopogologicalSortUtil(neighbor_index, visited, stack)
+    def TopoSort(self):
+        visited: Set[int] = set()
+        stack: List[int] = []
+        order: List[int] = []
+        queue: List[int] = [self.originIndex]
+        neighbors = self.GetAllNeighbors()
+        while queue:
+            current_node_index = queue.pop()
+            if current_node_index not in visited:
+                visited.add(current_node_index)
+                queue.extend(neighbors[current_node_index])
 
-        stack.insert(0, node_index)
+                while stack and current_node_index not in neighbors[stack[-1]]:
+                    order.append(stack.pop())
+                stack.append(current_node_index)
 
-    def GetTopoSortedNodesIndexes(self) -> List[int]:
-        ordered_nodes = []
-        visited = {}
-        for node_index in list(self.nodes):
-            if node_index not in visited:
-                self.TopogologicalSortUtil(
-                    node_index,
-                    visited,
-                    ordered_nodes
-                )
-
-        return ordered_nodes
+        return stack + order[::-1]
 
     def UpdateTopoSort(self):
-        self.nodesOrder = self.GetTopoSortedNodesIndexes()
+        self.nodesOrder = self.TopoSort()
 
     def BuildTrees(self) -> None:
         for node in self.nodes.values():
@@ -160,21 +154,23 @@ class BushGraph(Graph):
 
         self.nodes[self.originIndex].pi_min = 0
 
+        incoming_links_list = self.GetAllIncomingLinks()
+
         for node_index in self.nodesOrder:
-            incoming_links = self.GetIncomingLinks(node_index)
-            dest_node = self.nodes[node_index]
-            for link in incoming_links:
-                src_node = self.nodes[link.src]
-                cij = link.cost
+            if node_index in incoming_links_list:
+                dest_node = self.nodes[node_index]
+                for link in incoming_links_list[node_index]:
+                    src_node = self.nodes[link.src]
+                    cij = link.cost
 
-                # min distance
-                new_cost = src_node.pi_min + cij
-                if new_cost < dest_node.pi_min:
-                    dest_node.pi_min = new_cost
-                    dest_node.alpha_min = link
+                    # min distance
+                    new_cost = src_node.pi_min + cij
+                    if new_cost < dest_node.pi_min:
+                        dest_node.pi_min = new_cost
+                        dest_node.alpha_min = link
 
-                # max distance
-                new_cost = src_node.pi_max + cij
-                if new_cost > dest_node.pi_max:
-                    dest_node.pi_max = new_cost
-                    dest_node.alpha_max = link
+                    # max distance
+                    new_cost = src_node.pi_max + cij
+                    if new_cost > dest_node.pi_max:
+                        dest_node.pi_max = new_cost
+                        dest_node.alpha_max = link
