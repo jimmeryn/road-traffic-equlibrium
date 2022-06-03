@@ -131,3 +131,9 @@ dmypy.json
 # Algorithm result files
 results/result*
 results/data*
+
+# Temp files
+tmp/
+
+# Extra data for tests
+src/data/SiouxFalls*
