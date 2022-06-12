@@ -18,32 +18,45 @@ class BushGraph(Graph):
         self.network = network
         self.originIndex = originIndex
         self.demands = demands
-        self.bush_flow = self.GetBushFlowDict()
-        (nodes, links) = self.GetReachableNodesAndLinks()
+        self.bush_flow = self.CreateBushFlowDict()
+        (nodes, links) = self.InitialAsignment()
         self.nodes = nodes
         self.links = links
         self.nodesOrder = self.TopoSort()
         self.p2Cont: List[Link] = []
         self.BuildTrees()
 
-    def GetReachableNodesAndLinks(self) -> Tuple[Dict[int, Node], Dict[str, Link]]:
+    def InitialAsignment(self) -> Tuple[Dict[int, Node], Dict[str, Link]]:
         self.network.BuildMinTree(self.originIndex)
         links: Dict[str, Link] = dict()
         nodes: Dict[int, Node] = dict()
         for key, demand in enumerate(self.demands):
             node_key = key + 1
             link = self.network.nodes[node_key].alpha_min
+            if node_key not in nodes:
+                nodes[node_key] = self.network.nodes[node_key]
             while link is not None:
                 link.AddFlow(demand)
                 self.AddFlowToBushFlow(link.index, demand)
                 links[link.index] = link
                 link = self.network.nodes[link.src].alpha_min
 
-        nodes = self.network.nodes
+        for node in self.network.nodes.values():
+            if node.index in nodes:
+                continue
+            link = node.alpha_min
+            while link:
+                links[link.index] = link
+                if link.src not in nodes:
+                    nodes[link.src] = self.network.nodes[link.src]
+                if link.dest not in nodes:
+                    nodes[link.dest] = self.network.nodes[link.dest]
+                link = self.network.nodes[link.src].alpha_min
+            nodes[node.index] = node
 
         return (nodes, links)
 
-    def GetBushFlowDict(self):
+    def CreateBushFlowDict(self):
         return dict(
             map(
                 lambda link: (link.index, 0.0),
@@ -157,20 +170,22 @@ class BushGraph(Graph):
         incoming_links_list = self.GetAllIncomingLinks()
 
         for node_index in self.nodesOrder:
-            if node_index in incoming_links_list:
-                dest_node = self.nodes[node_index]
-                for link in incoming_links_list[node_index]:
-                    src_node = self.nodes[link.src]
-                    cij = link.cost
+            if node_index not in incoming_links_list:
+                continue
 
-                    # min distance
-                    new_cost = src_node.pi_min + cij
-                    if new_cost < dest_node.pi_min:
-                        dest_node.pi_min = new_cost
-                        dest_node.alpha_min = link
+            dest_node = self.nodes[node_index]
+            for link in incoming_links_list[node_index]:
+                src_node = self.nodes[link.src]
+                cij = link.cost
 
-                    # max distance
-                    new_cost = src_node.pi_max + cij
-                    if new_cost > dest_node.pi_max:
-                        dest_node.pi_max = new_cost
-                        dest_node.alpha_max = link
+                # min distance
+                new_cost = src_node.pi_min + cij
+                if new_cost < dest_node.pi_min:
+                    dest_node.pi_min = new_cost
+                    dest_node.alpha_min = link
+
+                # max distance
+                new_cost = src_node.pi_max + cij
+                if new_cost >= dest_node.pi_max:
+                    dest_node.pi_max = new_cost
+                    dest_node.alpha_max = link
