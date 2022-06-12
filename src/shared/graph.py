@@ -18,13 +18,6 @@ class Graph(ABC):
         self.nodes: Dict[int, Node] = dict()
         self.nodesOrder: List[int] = list()
 
-    def GetMaxGap(self) -> float:
-        gap = 0
-        for node in self.nodes.values():
-            if node.pi_max is not None and node.pi_min is not None:
-                gap = max(node.pi_max - node.pi_min, gap)
-        return gap
-
     def GetAllNeighbors(self):
         all_neighbors = defaultdict(list)
         for link in self.links:

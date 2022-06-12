@@ -19,5 +19,5 @@ class Algorithm(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def GetMaxGap(self) -> None:
+    def GetGaps(self) -> None:
         raise NotImplementedError

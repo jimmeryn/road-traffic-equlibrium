@@ -1,9 +1,9 @@
 """Algorithm B Class"""
+import math
 from typing import Dict
 
 from src.algorithms.algorithm import Algorithm
 from src.shared.bush import Bush
-from src.shared.consts import RECALCULATE_MAX_IN_GAP
 from src.shared.network import Network
 
 
@@ -38,19 +38,26 @@ class AlgorithmB(Algorithm):
             bush.Equilibrate()
             bush.RemoveUnusedLinks()
 
-    def GetMaxGap(self):
-        gap = 0
-        for from_node, demands_array in enumerate(self.demands):
-            from_node_index = from_node + 1
-            if from_node_index not in self.bushes:
-                continue
-            bush = self.bushes[from_node_index]
-            if RECALCULATE_MAX_IN_GAP:
-                bush.BuildTrees()
-            for to_node, demand in enumerate(demands_array):
-                to_node_index = to_node + 1
+    def GetGaps(self):
+        rel_gap = 0
+        max_gap = 0
+
+        total_travel_time = 0
+        for link in self.network.links.values():
+            total_travel_time += link.flow * link.cost
+
+        min_travel_time = 0
+        for bush in self.bushes.values():
+            bush.BuildTrees()
+            self.network.BuildMinTree(bush.originIndex)
+            for node_idx, demand in enumerate(bush.subgraph.demands):
                 if demand == 0:
                     continue
-                node = bush.subgraph.nodes[to_node_index]
-                gap = max(gap, node.pi_max - node.pi_min)
-        return gap
+                node = self.network.nodes[node_idx + 1]
+                min_travel_time += demand * node.pi_min
+                max_gap = max(max_gap, node.pi_max - node.pi_min)
+
+        rel_gap = 1.0 - min_travel_time / \
+            total_travel_time if total_travel_time > 1e-25 else math.inf
+
+        return (rel_gap, max_gap)

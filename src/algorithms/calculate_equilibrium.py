@@ -1,8 +1,8 @@
 """ Calculate Equilibrium Class """
-import math
 from io import TextIOWrapper
 
 from src.algorithms.algorithm import Algorithm
+from src.shared.consts import GAP
 
 
 class CalculateEquilibrium:
@@ -20,21 +20,24 @@ class CalculateEquilibrium:
 
     def Run(self, file: TextIOWrapper, data_file: TextIOWrapper) -> None:
         iteration_count = 0
-        delta_c_max = math.inf
+        gaps = self.algorithm.GetGaps()
         data_file.write(f"Bushes,{len(self.algorithm.bushes)}\n")
         data_file.write(f"Nodes,{len(self.algorithm.network.nodes)}\n")
         data_file.write(f"Links,{len(self.algorithm.network.links)}\n")
         while (
-            delta_c_max > self.e and
-            iteration_count < self.max_iteration_count
+            gaps[GAP] > self.e and
+            iteration_count < self.max_iteration_count or
+            iteration_count <= 0
         ):
-            file.write(f"{iteration_count},{delta_c_max}\n")
+            file.write(
+                f"{iteration_count},{gaps[1]},{iteration_count},{gaps[0]}\n")
             iteration_count += 1
             self.algorithm.Iteration()
-            delta_c_max = self.algorithm.GetMaxGap()
+            gaps = self.algorithm.GetGaps()
 
         data_file.write(
             f"Iterations,{iteration_count}\n")
-        data_file.write(f"Max_cost_difference,{delta_c_max}\n")
+        data_file.write(f"Rel_gap,{gaps[0]}\n")
+        data_file.write(f"Max_cost_difference,{gaps[1]}\n")
 
         return self.algorithm.network
