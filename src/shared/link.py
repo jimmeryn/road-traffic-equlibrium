@@ -53,9 +53,9 @@ class Link:
         self.cost_der = self.CalculateCostDerivative()
 
     def ResetFlow(self):
-        self.flow = 0
+        self.flow = 0.0
         self.cost = self.fft
-        self.cost_der = 0
+        self.cost_der = 0.0
 
     def CostFormula(self, x: float) -> float:
         # Use only when calculating new link cost or checking link cost for new flow
