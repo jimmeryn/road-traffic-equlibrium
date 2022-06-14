@@ -32,14 +32,14 @@ class Pas():
         self.segments[1 - self.cheapSegment].append(link)
 
     def GetLastCheapLink(self):
-        if 1 - self.cheapSegment not in self.segments:
-            return None
-        return self.segments[1 - self.cheapSegment][-1]
-
-    def GetLastExpLink(self):
         if self.cheapSegment not in self.segments:
             return None
         return self.segments[self.cheapSegment][-1]
+
+    def GetLastExpLink(self):
+        if 1 - self.cheapSegment not in self.segments:
+            return None
+        return self.segments[1 - self.cheapSegment][-1]
 
     def AddOrigin(self, graph: TapasBushGraph):
         self.relevantOrigins[graph.originIndex] = graph
@@ -89,10 +89,12 @@ class Pas():
                     else:
                         link.AddFlow(-shift_flow)
                 self.flowMovesNumber += 1
+
                 return True
+
         return False
 
-    def CalculateFlowShift(self):
+    def CalculateFlowShift(self) -> float:
         self.totalShift = 0.0
         for dag in self.relevantOrigins.values():
             min_flow_shift = math.inf
@@ -107,22 +109,26 @@ class Pas():
         d_flow = self.GetFlowShift()
         if d_flow > self.totalShift:
             d_flow = self.totalShift
+
         return d_flow
 
-    def GetFlowShift(self):
+    def GetFlowShift(self) -> float:
         path_der = self.CalculateDisjointPathDerivative(
             self.cheapSegment, 1 - self.cheapSegment)
+
         return (self.expCost - self.cheapCost) / path_der
 
-    def CalcSegCost(self, index: int):
+    def CalcSegCost(self, index: int) -> float:
         if index not in self.segments:
             return 0.0
+
         return sum(link.cost for link in self.segments[index])
 
-    def GetCostDiff(self):
+    def GetCostDiff(self) -> float:
         return self.expCost - self.cheapCost
 
     def RecalculateCosts(self):
+    def RecalculateCosts(self) -> float:
         cost0 = self.CalcSegCost(0)
         cost1 = self.CalcSegCost(1)
         condition = cost0 < cost1
@@ -133,7 +139,7 @@ class Pas():
 
         return self.expCost - self.cheapCost
 
-    def CalculateDisjointPathDerivative(self, index1: str, index2: str):
+    def CalculateDisjointPathDerivative(self, index1: str, index2: str) -> float:
         der_cost = 0.0
         if index1 in self.segments:
             der_cost += sum(link.cost_der for link in self.segments[index1])
