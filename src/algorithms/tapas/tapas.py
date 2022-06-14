@@ -38,10 +38,8 @@ class TAPAS(Algorithm):
 
     def Iteration(self) -> None:
         for bush in self.bushes.values():
-            bush.RemoveCyclicFlows()  # remove all cyclic flows, find tree of least cost routes
-            # for every link used by the origin which i not part of the tree
+            bush.RemoveCyclicFlows()
             bush.Equilibrate()
-            bush.RemoveUnusedLinks()
         self.pasManager.DeleteUnusedPASAndMoveFlow()
 
     # TODO move get gaps to common file
