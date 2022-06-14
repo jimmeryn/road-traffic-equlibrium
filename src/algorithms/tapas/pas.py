@@ -127,7 +127,6 @@ class Pas():
     def GetCostDiff(self) -> float:
         return self.expCost - self.cheapCost
 
-    def RecalculateCosts(self):
     def RecalculateCosts(self) -> float:
         cost0 = self.CalcSegCost(0)
         cost1 = self.CalcSegCost(1)
