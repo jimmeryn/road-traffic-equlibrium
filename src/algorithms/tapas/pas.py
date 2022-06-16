@@ -1,5 +1,6 @@
 """ Pas class """
 import math
+from operator import attrgetter
 from typing import Dict, List, Literal
 
 from src.algorithms.tapas.tapas_bush_graph import TapasBushGraph
@@ -15,9 +16,9 @@ class Pas():
         self.expCost = 0.0
         self.totalShift = 0.0
         self.cheapSegment: Literal[0, 1] = 0
-        self.flowMovesNumber = 0
-        self.relevantOrigins: Dict[str, TapasBushGraph] = {}
-        self.segments: Dict[str, List[Link]] = {0: [], 1: []}
+        self.flowMovesNumber: int = 0
+        self.relevantOrigins: List[TapasBushGraph] = []
+        self.segments: Dict[Literal[0, 1], List[Link]] = {0: [], 1: []}
 
     def IsUnused(self):
         ret_val = self.flowMovesNumber
@@ -30,6 +31,7 @@ class Pas():
 
     def PushBackToExp(self, link: Link):
         self.segments[1 - self.cheapSegment].append(link)
+        self.expCost += link.cost
 
     def GetLastCheapLink(self):
         if self.cheapSegment not in self.segments:
@@ -42,14 +44,13 @@ class Pas():
         return self.segments[1 - self.cheapSegment][-1]
 
     def AddOrigin(self, graph: TapasBushGraph):
-        self.relevantOrigins[graph.originIndex] = graph
+        self.relevantOrigins.append(graph)
 
     def CheckIfEffective(self, cost: float, v: float, index: int, graph: TapasBushGraph):
         return self.CheckIfCostEffective(cost) and self.CheckIfFlowEffective(v, index, graph)
 
     def CheckIfFlowEffective(self, v: float, index: int, graph: TapasBushGraph):
         min_flow = math.inf
-        flow = 0.0
         exp_index = 1 - self.cheapSegment
         for link in self.segments[exp_index]:
             flow = graph.bush_flow[link.index]
@@ -62,88 +63,79 @@ class Pas():
 
     def MoveFlow(self):
         self.flowMovesNumber -= 1
-        tmp = True
-        if self.RecalculateCosts() >= DIR_TOLERANCE:
-            shift_flow = self.CalculateFlowShift()
-            exp_index = 1 - self.cheapSegment
-            for dag in self.relevantOrigins.values():
-                if self.totalShift > 0.0:
-                    delta_x = dag.min_shift / self.totalShift * shift_flow
-                    if delta_x > ZERO_FLOW:
-                        tmp = False
-                        for link in self.segments[self.cheapSegment]:
-                            dag.AddOriginFlowAndCreateLink(link, delta_x)
+        self.RecalculateCosts()
+        if self.GetCostDiff() < DIR_TOLERANCE:
+            return
+        moved_flow = False
+        shift_flow = self.CalculateFlowShift()
+        exp_index = 1 - self.cheapSegment
+        for graph in self.relevantOrigins:
+            if self.totalShift <= 0.0:
+                continue
 
-                        for link in self.segments[exp_index]:
-                            if dag.bush_flow[link.index] - delta_x < ZERO_FLOW:
-                                dag.bush_flow[link.index] = 0.0
-                            else:
-                                dag.AddOriginFlowAndCreateLink(link, -delta_x)
+            delta_x = graph.min_shift / self.totalShift * shift_flow
+            if delta_x <= ZERO_FLOW:
+                continue
 
-            if tmp is False:
-                for link in self.segments[self.cheapSegment]:
-                    link.AddFlow(shift_flow)
-                for link in self.segments[exp_index]:
-                    if link.flow - shift_flow < ZERO_FLOW:
-                        link.ResetFlow()
-                    else:
-                        link.AddFlow(-shift_flow)
-                self.flowMovesNumber += 1
+            moved_flow = True
+            for link in self.segments[self.cheapSegment]:
+                graph.AddOriginFlowAndCreateLink(link, delta_x)
 
-                return True
+            for link in self.segments[exp_index]:
+                if graph.bush_flow[link.index] - delta_x < ZERO_FLOW:
+                    graph.bush_flow[link.index] = 0.0
+                else:
+                    graph.AddOriginFlowAndCreateLink(link, -delta_x)
 
-        return False
+        if not moved_flow:
+            return
+
+        for link in self.segments[self.cheapSegment]:
+            link.AddFlow(shift_flow)
+        for link in self.segments[exp_index]:
+            link.AddFlow(-shift_flow)
+        self.flowMovesNumber += 1
 
     def CalculateFlowShift(self) -> float:
         self.totalShift = 0.0
-        for dag in self.relevantOrigins.values():
+        exp_segment = self.segments[1 - self.cheapSegment]
+        for graph in self.relevantOrigins:
             min_flow_shift = math.inf
-            o_flow = 0.0
-            for link in self.segments[1 - self.cheapSegment]:
-                o_flow = dag.bush_flow[link.index]
-                if o_flow < min_flow_shift:
-                    min_flow_shift = o_flow
-            dag.min_shift = min_flow_shift
+            for link in exp_segment:
+                bush_flow = graph.bush_flow[link.index]
+                if bush_flow < min_flow_shift:
+                    min_flow_shift = bush_flow
+
+            graph.min_shift = min_flow_shift
             self.totalShift += min_flow_shift
 
-        d_flow = self.GetFlowShift()
-        if d_flow > self.totalShift:
-            d_flow = self.totalShift
+        flow_shift = self.GetFlowShift()
+        if flow_shift > self.totalShift:
+            flow_shift = self.totalShift
 
-        return d_flow
+        return flow_shift
 
     def GetFlowShift(self) -> float:
-        path_der = self.CalculateDisjointPathDerivative(
-            self.cheapSegment, 1 - self.cheapSegment)
-
-        return (self.expCost - self.cheapCost) / path_der
-
-    def CalcSegCost(self, index: int) -> float:
-        if index not in self.segments:
-            return 0.0
-
-        return sum(link.cost for link in self.segments[index])
+        return (self.expCost - self.cheapCost) / self.CalculateDisjointPathDerivative()
 
     def GetCostDiff(self) -> float:
         return self.expCost - self.cheapCost
 
     def RecalculateCosts(self) -> float:
-        cost0 = self.CalcSegCost(0)
-        cost1 = self.CalcSegCost(1)
-        condition = cost0 < cost1
+        cost0 = math.fsum(map(attrgetter('cost'), self.segments[0]))
+        cost1 = math.fsum(map(attrgetter('cost'), self.segments[1]))
 
-        self.cheapSegment = 0 if condition else 1
-        self.cheapCost = cost0 if condition else cost1
-        self.expCost = cost1 if condition else cost0
+        if cost0 < cost1:
+            self.cheapSegment = 0
+            self.cheapCost = cost0
+            self.expCost = cost1
+        else:
+            self.cheapSegment = 1
+            self.cheapCost = cost1
+            self.expCost = cost0
 
-        return self.expCost - self.cheapCost
-
-    def CalculateDisjointPathDerivative(self, index1: str, index2: str) -> float:
-        der_cost = 0.0
-        if index1 in self.segments:
-            der_cost += sum(link.cost_der for link in self.segments[index1])
-
-        if index2 in self.segments:
-            der_cost += sum(link.cost_der for link in self.segments[index2])
-
-        return der_cost
+    def CalculateDisjointPathDerivative(self) -> float:
+        return (
+            math.fsum(map(attrgetter('cost_der'), self.segments[0])) +
+            math.fsum(map(attrgetter('cost_der'), self.segments[1]))
+        )

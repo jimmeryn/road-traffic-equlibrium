@@ -1,5 +1,4 @@
 """ TAPAS Bush class """
-import logging
 from typing import List, Set
 
 from src.algorithms.tapas.pas_manager import PasManager
@@ -7,7 +6,6 @@ from src.algorithms.tapas.tapas_bush_graph import TapasBushGraph
 from src.shared.consts import ZERO_FLOW
 from src.shared.link import Link
 from src.shared.network import Network
-from src.utils.logger import Logger
 
 
 class TapasBush():
@@ -45,8 +43,6 @@ class TapasBush():
 
         incoming_links_dict = self.subgraph.GetAllIncomingLinks()
         for node_index, node in self.subgraph.nodes.items():
-            logging.basicConfig(level=logging.DEBUG)
-            Logger.LogPaths(self.subgraph.network.nodes, 'min')
             shortest_path_link = node.alpha_min
             if shortest_path_link is None:
                 continue
@@ -59,13 +55,10 @@ class TapasBush():
                     continue
                 self.pasManager.CreateNewPAS(self.subgraph, link, node_index)
 
-        flow_was_moved = False
-        for pas in self.pasManager.pasSet.values():
-            if pas.MoveFlow():
-                flow_was_moved = True
+        for pas in self.pasManager.pasList:
+            pas.MoveFlow()
 
-        return flow_was_moved
-
+    # Should have one topo sort
     def TopologicalSort(self):
         self.clock = 1
         self.topo_order.clear()
@@ -124,14 +117,8 @@ class TapasBush():
         link_tmp_index = -1
         for link_tmp in cycle:
             link_tmp_index = link_tmp.index
-            if self.subgraph.bush_flow[link_tmp_index] - min_flow < ZERO_FLOW:
-                self.subgraph.bush_flow[link_tmp_index] = 0.0
-            else:
-                self.subgraph.AddFlowToBushFlow(link_tmp_index, -min_flow)
-            if link_tmp.flow - min_flow < ZERO_FLOW:
-                link_tmp.ResetFlow()
-            else:
-                link_tmp.AddFlow(-min_flow)
+            self.subgraph.AddFlowToBushFlow(link_tmp_index, -min_flow)
+            link_tmp.AddFlow(-min_flow)
         return True
 
     def HandleExploredLink(self, link: Link):

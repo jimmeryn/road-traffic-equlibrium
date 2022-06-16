@@ -1,6 +1,6 @@
 """ Pas manager """
 import math
-from typing import Dict
+from typing import Dict, List
 
 from src.algorithms.tapas.pas import Pas
 from src.algorithms.tapas.tapas_bush_graph import TapasBushGraph
@@ -14,18 +14,17 @@ class PasManager():
 
     def __init__(self, net: Network) -> None:
         self.network: Network = net
-        self.shortestPath = []
-        self.pasSet: Dict[int, Pas] = {}
-        self.iteration_number = 1
+        self.pasList: List[Pas] = []
+        self.iteration_number: int = 1
         self.mu = MU
         self.v = V
 
     def RecalculatePASCosts(self):
-        for pas in self.pasSet.values():
+        for pas in self.pasList:
             pas.RecalculateCosts()
 
     def PasExist(self, cheapLink: Link, expLink: Link) -> Pas | None:
-        for pas in self.pasSet.values():
+        for pas in self.pasList:
             if pas.GetLastExpLink() is expLink and pas.GetLastCheapLink() is cheapLink:
                 return pas
         return None
@@ -48,19 +47,24 @@ class PasManager():
                 return
             link = self.network.nodes[next_dest].alpha_min
 
+    def GetShortestPathNodes(self, graph: TapasBushGraph, node_index: int):
+        shortest_path = {node_index}
+        link = graph.nodes[node_index].alpha_min
+        while link is not None:
+            shortest_path.add(link.src)
+            link = graph.nodes[link.src].alpha_min
+
+        return shortest_path
+
     def CreatePas(self, graph: TapasBushGraph, exp_link: Link, node_index: int, check: bool):
         queue = [exp_link]
         checked_nodes = dict.fromkeys(graph.nodes, False)
         checked_links: Dict[int, Link | None] = dict.fromkeys(graph.nodes, None)
         can_stop = False
-        shortest_path = {node_index}
-        link = graph.nodes[node_index].alpha_min
+        shortest_path_nodes = self.GetShortestPathNodes(graph, node_index)
         incoming_links_dict = graph.GetAllIncomingLinks()
         thr = self.v * graph.bush_flow[exp_link.index]
         created = True
-        while link is not None:
-            shortest_path.add(link.src)
-            link = graph.nodes[link.src].alpha_min
 
         while not can_stop:
             if not queue:
@@ -69,20 +73,20 @@ class PasManager():
             first_in_queue = queue.pop(0)
             checked_links[first_in_queue.src] = first_in_queue
 
-            if first_in_queue.src in shortest_path:
+            if first_in_queue.src in shortest_path_nodes:
                 diverge_node = first_in_queue.src
                 break
 
             for link in incoming_links_dict[first_in_queue.src]:
                 origin_flow = graph.bush_flow[link.index]
-                if not check or check and origin_flow > thr:
+                if not check or (check and origin_flow > thr):
                     node_from_index = link.src
                     if origin_flow > ZERO_FLOW and not checked_nodes[node_from_index]:
                         queue.append(link)
                         checked_nodes[node_from_index] = True
                         checked_links[node_from_index] = link
 
-                        if node_from_index in shortest_path:
+                        if node_from_index in shortest_path_nodes:
                             diverge_node = node_from_index
                             can_stop = True
                             break
@@ -100,7 +104,7 @@ class PasManager():
             pas = None
         else:
             pas.AddOrigin(graph)
-            self.pasSet[graph.originIndex] = pas
+            self.pasList.append(pas)
 
         return pas
 
@@ -132,7 +136,9 @@ class PasManager():
 
     def DeleteUnusedPASAndMoveFlow(self) -> None:
         self.iteration_number += 1
-        for key, pas in self.pasSet.copy().items():
+
+        def filter_pas(pas: Pas):
             pas.MoveFlow()
-            if pas.IsUnused():
-                del self.pasSet[key]
+            return not pas.IsUnused()
+
+        filter(filter_pas, self.pasList)
