@@ -65,9 +65,8 @@ class BushGraph(Graph):
         )
 
     def AddFlowToBushFlow(self, link_index: str, flow: float):
-        self.bush_flow[link_index] += flow
-        if self.bush_flow[link_index] <= ZERO_FLOW:
-            self.bush_flow[link_index] = 0.0
+        new_flow = self.bush_flow[link_index] + flow
+        self.bush_flow[link_index] = new_flow if new_flow > ZERO_FLOW else 0.0
 
     def RemoveEmptyLinks(self):
         removed_link = False
