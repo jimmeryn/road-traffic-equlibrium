@@ -32,30 +32,17 @@ class Link:
         self.cost = free_flow_time
         self.cost_der = free_flow_time
 
-    def CalculateCost(self, flow: float | None = None):
-        if flow is None:
-            return self.CostFormula(self.flow)
-
-        return self.CostFormula(flow)
-
-    def CalculateCostDerivative(self, flow: float | None = None):
-        if flow is None:
-            return self.CostDerivativeFormula(self.flow)
-
-        return self.CostDerivativeFormula(flow)
-
     def AddFlow(self, delta_flow: float):
         # Add flow to the link and update cost and cost derivative
-        self.flow += delta_flow
-        if self.flow <= ZERO_FLOW:
+        new_flow = self.flow + delta_flow
+        if new_flow <= ZERO_FLOW:
             self.flow = 0.0
-        self.cost = self.CalculateCost()
-        self.cost_der = self.CalculateCostDerivative()
-
-    def ResetFlow(self):
-        self.flow = 0.0
-        self.cost = self.fft
-        self.cost_der = 0.0
+            self.cost = self.fft
+            self.cost_der = 0.0
+            return
+        self.flow = new_flow
+        self.cost = self.CostFormula(new_flow)
+        self.cost_der = self.CostDerivativeFormula(new_flow)
 
     def CostFormula(self, x: float) -> float:
         # Use only when calculating new link cost or checking link cost for new flow
