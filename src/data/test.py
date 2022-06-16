@@ -1,7 +1,5 @@
 """ Testing funtion """
-import logging
 import os
-from time import perf_counter
 
 import src.data.data as data
 from results.root import ROOT_DIR
@@ -61,27 +59,16 @@ def run_test(
     print(f"Test started for {current_city}...")
     file_name = f"results-{algorithm.__class__.__name__}-{current_city}.csv"
     full_result_file_name = os.path.join(ROOT_DIR, file_name)
-    metadata_file_name = f"data-{algorithm.__class__.__name__}-{current_city}.csv"
-    full_metadata_file_name = os.path.join(ROOT_DIR, metadata_file_name)
-    with (
-        open(full_result_file_name, 'w+', encoding="utf-8") as file,
-        open(full_metadata_file_name, 'w+', encoding="utf-8") as data_file
-    ):
-        start_time = perf_counter()
+    with open(full_result_file_name, 'w+', encoding="utf-8") as file:
         network = CalculateEquilibrium(
             algorithm,
             max_error,
             max_iteration_count
-        ).Run(file, data_file)
-        end_time = perf_counter()
-        data_file.write(f"Time(sec),{end_time - start_time}\n")
+        ).Run(file)
 
-    if compare_solution:
-        logging.basicConfig(level=logging.DEBUG)
-        Logger.CompareSolution(solution, network)
-        Logger.TestSolution(solution, network)
+        if compare_solution:
+            Logger.TestSolution(solution, network)
 
     print(f"The results are available at: {full_result_file_name}")
-    print(f"The metadata is available at: {full_metadata_file_name}")
 
     return

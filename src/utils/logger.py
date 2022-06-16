@@ -1,5 +1,7 @@
 """ Logger """
 import logging
+import math
+from io import TextIOWrapper
 from typing import Any, Dict, Literal
 
 from src.shared.graph import Graph
@@ -13,16 +15,19 @@ class Logger:
 
     @staticmethod
     def LogFlow(links: Dict[int, Link]) -> None:
+        logging.basicConfig(level=logging.DEBUG)
         for key, link in links.items():
             logging.debug("%s: %s", key, link.flow)
 
     @staticmethod
     def LogCosts(links: Dict[int, Link]) -> None:
+        logging.basicConfig(level=logging.DEBUG)
         for key, link in links.items():
             logging.debug("%s: %s", key, link.cost)
 
     @staticmethod
     def LogGraphLinks(links: Dict[int, Link]) -> None:
+        logging.basicConfig(level=logging.DEBUG)
         logging.debug("Links:")
         logging.debug("source_target: c(flow) = cost")
         for key, link in links.items():
@@ -31,6 +36,7 @@ class Logger:
 
     @staticmethod
     def LogGraphNodes(nodes: Dict[int, Node]) -> None:
+        logging.basicConfig(level=logging.DEBUG)
         log_string = "{node_index}: max: {alpha_max} ({pi_max}), min: {alpha_min} ({pi_min})"
         default_message_params = {
             "node_index": -1,
@@ -85,6 +91,7 @@ class Logger:
 
     @staticmethod
     def LogSolution(solution: Any) -> None:
+        logging.basicConfig(level=logging.DEBUG)
         logging.debug("Solution:")
         for link in solution.values:
             logging.debug(
@@ -97,6 +104,7 @@ class Logger:
 
     @staticmethod
     def CompareSolution(solution: Any, graph: Graph) -> None:
+        logging.basicConfig(level=logging.DEBUG)
         logging.debug("Compare Solution:")
         logging.debug(
             "source_target: c(calculated_flow | solution_flow) = calculated_cost | solution_cost")
@@ -113,7 +121,16 @@ class Logger:
                 )
 
     @staticmethod
+    def CompareSolutionToFile(solution: Any, graph: Graph, file: TextIOWrapper) -> None:
+        for link in solution.values:
+            link_key = f"{int(link[0])}_{int(link[1])}"
+            graph_link = graph.links[link_key]
+            file.write(
+                f"{link_key},{math.fabs(graph_link.flow - link[2])}\n")
+
+    @staticmethod
     def TestSolution(solution: Any, graph: Graph) -> None:
+        logging.basicConfig(level=logging.DEBUG)
         logging.debug("Testing solution...")
         max_dif = 0
         error_message = "Expected link ({src}_{dest}) flow to be {flow_calc}, got {flow}."
@@ -140,6 +157,7 @@ class Logger:
 
     @staticmethod
     def LogNodesDifference(nodes: Dict[int, Node]) -> None:
+        logging.basicConfig(level=logging.DEBUG)
         for node in nodes.values():
             pi_max = node.pi_max
             pi_min = node.pi_min
