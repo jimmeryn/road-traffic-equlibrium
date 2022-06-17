@@ -24,13 +24,11 @@ class TapasBush():
         self.error = error
         self.m = len(self.subgraph.nodes) - 1
         self.pasManager = pasManager
-        self.exploredLinks: List[Link] = []
         self.topo_order = []
         self.clock = 1
 
     def RemoveCyclicFlows(self):
         while True:
-            self.exploredLinks.clear()
             if not self.TopologicalSort():
                 break
 
@@ -63,19 +61,20 @@ class TapasBush():
         self.clock = 1
         self.topo_order.clear()
         visited = set()
+        explored_links = []
         for node in self.subgraph.nodes.values():
             node.pre = 0
             node.post = 0
 
         for index in self.subgraph.nodes:
             if index not in visited:
-                tmp = self.Explore(index, visited)
+                tmp = self.Explore(index, visited, explored_links)
                 if tmp:
                     return True
 
         return False
 
-    def Explore(self, vertex: int, visited: Set[int]):
+    def Explore(self, vertex: int, visited: Set[int], explored_links: List[Link]):
         visited.add(vertex)
         self.PreVisit(vertex)
         links_list = self.subgraph.GetOutcomingLinks(vertex)
@@ -85,17 +84,17 @@ class TapasBush():
         for link in links_list:
             index = link.dest
             if self.subgraph.bush_flow[link.index] > ZERO_FLOW:
-                self.HandleExploredLink(link)
+                explored_links.append(link)
                 if self.subgraph.nodes[index].pre == 0:
-                    detected = self.Explore(index, visited)
+                    detected = self.Explore(index, visited, explored_links)
                     if detected:
                         return True
                 if self.subgraph.nodes[index].pre > 0 and self.subgraph.nodes[index].post == 0:
-                    return self.HandleBackEdge(link)
+                    return self.HandleBackEdge(link, explored_links)
         self.PostVisit(vertex)
         return False
 
-    def HandleBackEdge(self, link: Link):
+    def HandleBackEdge(self, link: Link, explored_links: List[Link]):
         link_index = link.index
         next_node = link.src
         term_node = link.dest
@@ -103,7 +102,7 @@ class TapasBush():
         cycle: List[Link] = [link]
         flow = 0.0
         min_flow = self.subgraph.bush_flow[link_index]
-        for next_link in self.exploredLinks:
+        for next_link in explored_links:
             if next_link.dest == next_node:
                 flow = self.subgraph.bush_flow[next_link.index]
                 cycle.append(next_link)
@@ -120,9 +119,6 @@ class TapasBush():
             self.subgraph.AddFlowToBushFlow(link_tmp_index, -min_flow)
             link_tmp.AddFlow(-min_flow)
         return True
-
-    def HandleExploredLink(self, link: Link):
-        self.exploredLinks.append(link)
 
     def PreVisit(self, vertex: int):
         self.subgraph.nodes[vertex].pre = self.clock
