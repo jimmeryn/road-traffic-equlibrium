@@ -98,11 +98,17 @@ class Pas():
 
     def CalculateFlowShift(self) -> float:
         self.totalShift = 0.0
-        exp_segment = self.segments[1 - self.cheapSegment]
+        exp_segment: List[str] = list(
+            map(
+                attrgetter('index'),
+                self.segments[1 - self.cheapSegment]
+            )
+        )
+
         for graph in self.relevantOrigins:
             min_flow_shift = math.inf
-            for link in exp_segment:
-                bush_flow = graph.bush_flow[link.index]
+            for link_index in exp_segment:
+                bush_flow = graph.bush_flow[link_index]
                 if bush_flow < min_flow_shift:
                     min_flow_shift = bush_flow
 

@@ -139,6 +139,9 @@ class PasManager():
 
         def filter_pas(pas: Pas):
             pas.MoveFlow()
-            return not pas.IsUnused()
+            unused = pas.IsUnused()
+            if unused:
+                self.iteration_number -= 1
+            return not unused
 
-        filter(filter_pas, self.pasList)
+        self.pasList = list(filter(filter_pas, self.pasList))
