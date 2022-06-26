@@ -137,3 +137,6 @@ tmp/
 
 # Extra data for tests
 src/data/SiouxFalls*
+
+src/classes.dot
+src/packages.dot
