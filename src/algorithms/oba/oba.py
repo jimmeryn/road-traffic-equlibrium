@@ -32,16 +32,30 @@ class OBA(Algorithm):
         return bushes
 
     def Iteration(self) -> None:
-        main_iterations = 100
-        inner_iterations = 100
+        main_iterations = 1
+        inner_iterations = 1
         for _n in range(1, main_iterations):
-            for bush in self.bushes:
+            for bush in self.bushes.values():
                 self.UpdateRestrictingSubnetwork(bush)
                 self.UpdateLinkFlows(bush)
 
             for _m in range(1, inner_iterations):
-                for bush in self.bushes:
+                for bush in self.bushes.values():
                     self.UpdateLinkFlows(bush)
+
+    def UpdateRestrictingSubnetwork(self, bush: Bush):
+        bush.RemoveUnusedLinks()
+        bush.UpdateTopoSort()
+        bush.BuildTrees()
+
+        for link in self.network.links.values():
+            if self.network.nodes[link.src].pi_max < self.network.nodes[link.dest].pi_max:
+                bush.subgraph.links[link.index] = link
+                # check if link nodes exists in bush or just dont remove them
+
+        bush.UpdateTopoSort()
+        self.FindLastCommonNodes(bush)
+        # update data structures
 
     def UpdateLinkFlows(self, bush):
         k = 0
@@ -56,25 +70,9 @@ class OBA(Algorithm):
         self.ApplyFlowShifts()
         self.UpdateTotalLinkFlowsAndCosts()
 
-    def UpdateRestrictingSubnetwork(self, bush: Bush):
-        bush.RemoveUnusedLinks()
-        self.ComputeMaxCosts()
-
-        for link in self.network.links.values():
-            if self.network.nodes[link.src].pi_max < self.network.nodes[link.dest].pi_max:
-                bush.subgraph.links[link.index] = link
-                # check if link nodes exists in bush
-
-        bush.UpdateTopoSort()
-        self.FindLastCommonNodes(bush)
-        # update data structures
-
-    def ComputeMaxCosts(self):
-        # TODO compute maximum cost u_i from bush.originIndex to all nodes
-        pass
-
     def ComputeFlowShift(self, step_size: float):
         # TODO
+        # get route 1 and route 2
         return 0.0
 
     def ProjectAndAggregateFlowShifts(self, delta_x: float):
